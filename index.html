@@ -1,0 +1,3531 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Da Ideia ao Primeiro PIX</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-deep: #0a0e17;
+      --bg-panel: #111827;
+      --bg-card: #1a2332;
+      --bg-card-hover: #1f2a3d;
+      --border: #243044;
+      --border-light: #2d3a4f;
+      --text-primary: #f1f5f9;
+      --text-secondary: #94a3b8;
+      --text-muted: #64748b;
+      --accent-blue: #3b82f6;
+      --accent-purple: #8b5cf6;
+      --accent-green: #10b981;
+      --accent-yellow: #f59e0b;
+      --accent-red: #ef4444;
+      --gradient: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%);
+      --radius: 12px;
+      --radius-sm: 8px;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: var(--bg-deep);
+      color: var(--text-primary);
+      min-height: 100vh;
+      overflow: hidden;
+    }
+    .app {
+      display: grid;
+      grid-template-columns: 280px 1fr 300px;
+      height: 100vh;
+    }
+    .sidebar {
+      background: var(--bg-panel);
+      border-right: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      padding: 20px 14px;
+      overflow-y: auto;
+    }
+    .logo {
+      display: flex; align-items: center; gap: 10px;
+      padding: 0 8px 20px;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 16px;
+    }
+    .logo-icon {
+      width: 34px; height: 34px;
+      background: var(--gradient);
+      border-radius: 10px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 16px;
+    }
+    .logo-text { font-size: 12px; font-weight: 600; line-height: 1.3; }
+    .logo-text span { display: block; font-size: 10px; font-weight: 400; color: var(--text-muted); }
+    .sidebar-section-title {
+      font-size: 10px; font-weight: 600;
+      text-transform: uppercase; letter-spacing: 1px;
+      color: var(--text-muted);
+      padding: 8px 10px 6px;
+      margin-top: 8px;
+    }
+    .stages { display: flex; flex-direction: column; gap: 4px; }
+    .stage-item {
+      display: flex; align-items: center; gap: 10px;
+      padding: 10px 12px;
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      transition: all 0.2s;
+      border: 1px solid transparent;
+    }
+    .stage-item:hover:not(.locked) { background: var(--bg-card); }
+    .stage-item.active { background: var(--bg-card); border-color: var(--accent-blue); }
+    .stage-item.locked { opacity: 0.4; cursor: not-allowed; }
+    .stage-item.completed .stage-status { color: var(--accent-green); }
+    .stage-status { font-size: 14px; width: 20px; text-align: center; flex-shrink: 0; }
+    .stage-info { flex: 1; min-width: 0; }
+    .stage-num { font-size: 10px; color: var(--text-muted); font-weight: 500; }
+    .stage-name { font-size: 13px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .products-list { display: flex; flex-direction: column; gap: 4px; margin-bottom: 8px; max-height: 160px; overflow-y: auto; }
+    .product-item {
+      display: flex; align-items: center; gap: 8px;
+      padding: 8px 12px;
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      font-size: 12px;
+      color: var(--text-secondary);
+      border: 1px solid transparent;
+      transition: all 0.2s;
+    }
+    .product-item:hover { background: var(--bg-card); color: var(--text-primary); }
+    .product-item.active { background: var(--bg-card); border-color: var(--accent-purple); color: var(--text-primary); }
+    .product-item .prod-icon { font-size: 14px; }
+    .product-item .prod-name { flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .sidebar-footer {
+      margin-top: auto;
+      padding-top: 12px;
+      border-top: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .btn-sidebar {
+      width: 100%;
+      padding: 9px;
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--text-muted);
+      border-radius: var(--radius-sm);
+      font-size: 12px;
+      cursor: pointer;
+      transition: all 0.2s;
+      font-family: inherit;
+      font-weight: 500;
+    }
+    .btn-sidebar:hover { border-color: var(--accent-blue); color: var(--accent-blue); background: rgba(59,130,246,0.08); }
+    .btn-sidebar.danger:hover { border-color: var(--accent-red); color: var(--accent-red); background: rgba(239,68,68,0.08); }
+    .main { display: flex; flex-direction: column; overflow: hidden; background: var(--bg-deep); }
+    .topbar { padding: 18px 28px; border-bottom: 1px solid var(--border); background: var(--bg-panel); }
+    .topbar h1 { font-size: 17px; font-weight: 600; margin-bottom: 10px; }
+    .progress-container { display: flex; align-items: center; gap: 14px; }
+    .progress-bar { flex: 1; height: 5px; background: var(--bg-card); border-radius: 3px; overflow: hidden; }
+    .progress-fill { height: 100%; background: var(--gradient); border-radius: 3px; transition: width 0.5s ease; }
+    .progress-text { font-size: 12px; color: var(--text-secondary); white-space: nowrap; }
+    .content { flex: 1; overflow-y: auto; padding: 28px; }
+    .stage-panel { max-width: 720px; margin: 0 auto; display: none; }
+    .stage-panel.active { display: block; animation: fadeIn 0.3s ease; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+    .stage-header { margin-bottom: 24px; }
+    .stage-header h2 { font-size: 22px; font-weight: 700; margin-bottom: 8px; letter-spacing: -0.3px; }
+    .stage-header p { font-size: 14px; color: var(--text-secondary); line-height: 1.6; }
+    .question-block {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 20px;
+      margin-bottom: 12px;
+    }
+    .question-label {
+      font-size: 13px; font-weight: 600; margin-bottom: 10px;
+      display: flex; align-items: center; gap: 8px;
+    }
+    .question-label .q-num {
+      background: var(--accent-blue); color: white;
+      width: 20px; height: 20px; border-radius: 5px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 11px; font-weight: 600; flex-shrink: 0;
+    }
+    textarea, input[type="text"] {
+      width: 100%;
+      background: var(--bg-panel);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 11px 13px;
+      color: var(--text-primary);
+      font-family: inherit;
+      font-size: 13px;
+      resize: vertical;
+      min-height: 70px;
+      transition: border-color 0.2s;
+    }
+    textarea:focus, input[type="text"]:focus { outline: none; border-color: var(--accent-blue); }
+    textarea::placeholder, input::placeholder { color: var(--text-muted); }
+    .btn {
+      display: inline-flex; align-items: center; justify-content: center; gap: 7px;
+      padding: 11px 20px;
+      border-radius: var(--radius-sm);
+      font-family: inherit; font-size: 13px; font-weight: 600;
+      cursor: pointer; border: none; transition: all 0.2s;
+    }
+    .btn-primary { background: var(--gradient); color: white; }
+    .btn-primary:hover { opacity: 0.9; transform: translateY(-1px); }
+    .btn-primary:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+    .btn-secondary { background: var(--bg-card); color: var(--text-primary); border: 1px solid var(--border); }
+    .btn-secondary:hover { background: var(--bg-card-hover); }
+    .btn-success { background: var(--accent-green); color: white; }
+    .btn-success:hover { filter: brightness(1.1); }
+    .btn-ghost { background: transparent; color: var(--text-secondary); border: 1px solid var(--border); }
+    .btn-ghost:hover { color: var(--text-primary); border-color: var(--border-light); }
+    .btn-ai {
+      background: rgba(139,92,246,0.15);
+      color: var(--accent-purple);
+      border: 1px solid rgba(139,92,246,0.4);
+    }
+    .btn-ai:hover { background: rgba(139,92,246,0.25); }
+    .actions { display: flex; gap: 10px; margin-top: 20px; flex-wrap: wrap; }
+    .option-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 20px;
+      margin-bottom: 12px;
+      transition: all 0.2s;
+      cursor: pointer;
+      position: relative;
+    }
+    .option-card:hover { border-color: var(--accent-blue); background: var(--bg-card-hover); }
+    .option-card.selected { border-color: var(--accent-green); box-shadow: 0 0 0 1px var(--accent-green); }
+    .option-card.recommended::before {
+      content: '★ Recomendada';
+      position: absolute; top: -9px; right: 14px;
+      background: var(--accent-purple); color: white;
+      font-size: 10px; font-weight: 600; padding: 2px 9px; border-radius: 20px;
+    }
+    .option-title { font-size: 15px; font-weight: 700; margin-bottom: 10px; color: var(--accent-blue); }
+    .option-field { margin-bottom: 8px; }
+    .option-field strong { font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.4px; display: block; margin-bottom: 2px; }
+    .option-field span { font-size: 13px; color: var(--text-secondary); line-height: 1.5; }
+    .scores {
+      display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px;
+      margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--border);
+    }
+    .score-item { text-align: center; }
+    .score-item .label { font-size: 10px; color: var(--text-muted); margin-bottom: 3px; }
+    .score-item .value { font-size: 15px; font-weight: 700; }
+    .score-high { color: var(--accent-green); }
+    .score-mid { color: var(--accent-yellow); }
+    .score-low { color: var(--accent-red); }
+    .ai-result {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 20px;
+      margin-bottom: 16px;
+    }
+    .ai-result h3 {
+      font-size: 14px; font-weight: 600; margin-bottom: 14px;
+      display: flex; align-items: center; gap: 8px;
+    }
+    .ai-result h3::before {
+      content: ''; width: 3px; height: 16px;
+      background: var(--gradient); border-radius: 2px;
+    }
+    .profile-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .profile-item { background: var(--bg-panel); border-radius: var(--radius-sm); padding: 12px; }
+    .profile-item.full { grid-column: 1 / -1; }
+    .profile-item label { font-size: 10px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.4px; display: block; margin-bottom: 5px; }
+    .profile-item .value { font-size: 13px; color: var(--text-primary); line-height: 1.5; }
+    .profile-item textarea, .profile-item input { min-height: 50px; margin-top: 3px; }
+    .potential-scores { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin: 16px 0; }
+    .potential-item { background: var(--bg-panel); border-radius: var(--radius-sm); padding: 14px; text-align: center; }
+    .potential-item .score { font-size: 24px; font-weight: 700; margin-bottom: 3px; }
+    .potential-item .label { font-size: 11px; color: var(--text-muted); }
+    .lesson-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 16px;
+      margin-bottom: 10px;
+      display: grid;
+      grid-template-columns: 42px 1fr auto;
+      gap: 14px;
+      align-items: start;
+    }
+    .lesson-num {
+      width: 42px; height: 42px;
+      background: var(--gradient);
+      border-radius: 10px;
+      display: flex; align-items: center; justify-content: center;
+      font-weight: 700; font-size: 16px;
+    }
+    .lesson-content h4 { font-size: 14px; font-weight: 600; margin-bottom: 6px; }
+    .lesson-content p { font-size: 12px; color: var(--text-secondary); line-height: 1.5; margin-bottom: 3px; }
+    .lesson-content .meta { font-size: 11px; color: var(--text-muted); }
+    .btn-roteiro {
+      padding: 8px 12px;
+      font-size: 11px;
+      white-space: nowrap;
+      background: rgba(59,130,246,0.12);
+      color: var(--accent-blue);
+      border: 1px solid rgba(59,130,246,0.35);
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      font-family: inherit;
+      font-weight: 600;
+      transition: all 0.2s;
+    }
+    .btn-roteiro:hover { background: rgba(59,130,246,0.22); }
+    .checklist { display: flex; flex-direction: column; gap: 8px; }
+    .check-item {
+      display: flex; align-items: center; gap: 10px;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 12px 14px;
+      cursor: pointer;
+      transition: all 0.2s;
+      font-size: 13px;
+    }
+    .check-item:hover { border-color: var(--border-light); }
+    .check-item.checked { border-color: var(--accent-green); background: rgba(16,185,129,0.08); }
+    .check-box {
+      width: 20px; height: 20px;
+      border: 2px solid var(--border-light);
+      border-radius: 5px;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+    }
+    .check-item.checked .check-box { background: var(--accent-green); border-color: var(--accent-green); }
+    .check-item.checked .check-box::after { content: '✓'; color: white; font-size: 12px; font-weight: 700; }
+    .success-banner {
+      background: rgba(16,185,129,0.12);
+      border: 1px solid var(--accent-green);
+      border-radius: var(--radius);
+      padding: 14px 18px;
+      margin-bottom: 20px;
+      display: flex; align-items: center; gap: 10px;
+      font-weight: 500; color: var(--accent-green); font-size: 13px;
+    }
+    .warning-banner {
+      background: rgba(245,158,11,0.12);
+      border: 1px solid var(--accent-yellow);
+      border-radius: var(--radius);
+      padding: 14px 18px;
+      margin-bottom: 20px;
+      font-size: 13px; color: var(--accent-yellow); line-height: 1.5;
+    }
+    .info-banner {
+      background: rgba(59,130,246,0.1);
+      border: 1px solid var(--accent-blue);
+      border-radius: var(--radius);
+      padding: 14px 18px;
+      margin-bottom: 20px;
+      font-size: 13px; color: var(--text-secondary); line-height: 1.5;
+    }
+    .bonus-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 16px;
+      margin-bottom: 10px;
+      display: flex; gap: 14px; align-items: flex-start;
+      cursor: pointer; transition: all 0.2s;
+    }
+    .bonus-card:hover { border-color: var(--accent-blue); }
+    .bonus-card.selected { border-color: var(--accent-green); background: rgba(16,185,129,0.06); }
+    .bonus-check {
+      width: 20px; height: 20px;
+      border: 2px solid var(--border-light);
+      border-radius: 5px;
+      flex-shrink: 0; margin-top: 2px;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .bonus-card.selected .bonus-check { background: var(--accent-green); border-color: var(--accent-green); }
+    .bonus-card.selected .bonus-check::after { content: '✓'; color: white; font-size: 12px; font-weight: 700; }
+    .bonus-content h4 { font-size: 14px; font-weight: 600; margin-bottom: 4px; }
+    .bonus-content p { font-size: 12px; color: var(--text-secondary); line-height: 1.5; }
+    .product-panel {
+      background: var(--bg-panel);
+      border-left: 1px solid var(--border);
+      padding: 20px 16px;
+      overflow-y: auto;
+    }
+    .product-panel h3 {
+      font-size: 11px; font-weight: 600;
+      text-transform: uppercase; letter-spacing: 1px;
+      color: var(--text-muted);
+      margin-bottom: 16px;
+      padding-bottom: 10px;
+      border-bottom: 1px solid var(--border);
+    }
+    .product-field { margin-bottom: 14px; }
+    .product-field label {
+      font-size: 10px; color: var(--text-muted);
+      text-transform: uppercase; letter-spacing: 0.4px;
+      display: block; margin-bottom: 3px;
+    }
+    .product-field .val {
+      font-size: 12px; color: var(--text-primary);
+      line-height: 1.4; word-break: break-word;
+    }
+    .product-field .val.empty { color: var(--text-muted); font-style: italic; }
+    .modal-overlay {
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,0.7);
+      backdrop-filter: blur(4px);
+      z-index: 1000;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+    .modal-overlay.open { display: flex; }
+    .modal {
+      background: var(--bg-panel);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      width: 100%;
+      max-width: 680px;
+      max-height: 88vh;
+      overflow-y: auto;
+      padding: 32px;
+      position: relative;
+    }
+    .modal.wide { max-width: 780px; }
+    .modal h2 { font-size: 20px; margin-bottom: 6px; }
+    .modal .subtitle { color: var(--text-muted); font-size: 13px; margin-bottom: 24px; }
+    .modal-close {
+      position: absolute; top: 16px; right: 16px;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      color: var(--text-secondary);
+      width: 32px; height: 32px;
+      border-radius: 7px;
+      cursor: pointer; font-size: 16px;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .modal-close:hover { color: var(--text-primary); }
+    .modal-actions {
+      display: flex; gap: 10px;
+      margin-top: 24px;
+      padding-top: 20px;
+      border-top: 1px solid var(--border);
+    }
+    .dossier-section { margin-bottom: 22px; }
+    .dossier-section h4 {
+      font-size: 13px; font-weight: 600;
+      color: var(--accent-blue);
+      margin-bottom: 6px;
+      padding-bottom: 5px;
+      border-bottom: 1px solid var(--border);
+    }
+    .dossier-section p, .dossier-section li {
+      font-size: 13px; color: var(--text-secondary); line-height: 1.6;
+    }
+    .dossier-section ul { padding-left: 18px; }
+    .roteiro-block {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 16px;
+      margin-bottom: 12px;
+      font-size: 13px;
+      line-height: 1.65;
+      color: var(--text-secondary);
+      white-space: pre-line;
+    }
+    .loading {
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      padding: 50px 20px; gap: 14px;
+    }
+    .spinner {
+      width: 36px; height: 36px;
+      border: 3px solid var(--border);
+      border-top-color: var(--accent-blue);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .loading p { color: var(--text-secondary); font-size: 13px; }
+    ::-webkit-scrollbar { width: 5px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+    @media (max-width: 1100px) { .app { grid-template-columns: 240px 1fr 260px; } }
+    @media (max-width: 900px) {
+      .app { grid-template-columns: 1fr; }
+      .sidebar, .product-panel { display: none; }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <aside class="sidebar">
+      <div class="logo">
+        <div class="logo-icon">⚡</div>
+        <div class="logo-text">
+          Da Ideia ao<br>Primeiro PIX
+          <span>Construtor de Produto Mínimo · v2.2</span>
+        </div>
+      </div>
+      <button class="btn-sidebar" id="nav-meus-produtos" onclick="renderHome()" style="margin-bottom:6px">Meus Produtos</button>
+      <button class="btn-sidebar" id="nav-criar" onclick="createAndOpen()" style="margin-bottom:6px">+ Criar produto</button>
+      <button class="btn-sidebar" id="nav-ia" onclick="openIASettings()" style="margin-bottom:12px">⚙ Configurar IA</button>
+
+      <div class="sidebar-section-title" id="section-stages-title" style="display:none">Etapas</div>
+      <nav class="stages" id="stages-nav" style="display:none"></nav>
+      <div class="products-list" id="products-list" style="display:none"></div>
+
+      <div class="sidebar-footer">
+        <button class="btn-sidebar danger" onclick="resetCurrent()" id="btn-reset-current" style="display:none">↺ Zerar atual</button>
+      </div>
+    </aside>
+    <main class="main">
+      <div class="topbar">
+        <h1 id="topbar-title">Seu Produto Mínimo</h1>
+        <div class="progress-container">
+          <div class="progress-bar">
+            <div class="progress-fill" id="progress-fill" style="width:0%"></div>
+          </div>
+          <div class="progress-text" id="progress-text">0% — 0 de 7 etapas concluídas</div>
+        </div>
+      </div>
+      <div class="content" id="content"></div>
+    </main>
+    <aside class="product-panel">
+      <h3>Seu Produto</h3>
+      <div id="product-summary">
+        <div class="product-field"><label>Oportunidade / Nome</label><div class="val empty" id="sum-nome">Ainda não definido</div></div>
+        <div class="product-field"><label>Público</label><div class="val empty" id="sum-publico">Ainda não definido</div></div>
+        <div class="product-field"><label>Dor principal</label><div class="val empty" id="sum-problema">Ainda não definida</div></div>
+        <div class="product-field"><label>Transformação</label><div class="val empty" id="sum-transformacao">Ainda não definida</div></div>
+        <div class="product-field"><label>Promessa</label><div class="val empty" id="sum-promessa">Ainda não definida</div></div>
+        <div class="product-field"><label>Estrutura</label><div class="val empty" id="sum-estrutura">Ainda não definida</div></div>
+        <div class="product-field"><label>Oferta</label><div class="val empty" id="sum-oferta">Ainda não definida</div></div>
+        <div class="product-field"><label>Preço</label><div class="val empty" id="sum-preco">Ainda não definido</div></div>
+        <div class="product-field"><label>Bônus</label><div class="val empty" id="sum-bonus">Ainda não definidos</div></div>
+      </div>
+    </aside>
+  </div>
+
+  <div class="modal-overlay" id="dossier-modal">
+    <div class="modal wide">
+      <button class="modal-close" onclick="closeModal('dossier-modal')">×</button>
+      <h2>Dossiê do Produto Mínimo</h2>
+      <p class="subtitle">Documento completo. Copie e leve para qualquer ferramenta.</p>
+      <div id="dossier-content"></div>
+      <div class="modal-actions">
+        <button class="btn btn-primary" onclick="copyDossier()">📋 Copiar</button>
+        <button class="btn btn-secondary" onclick="downloadDossier()">⬇️ Baixar .txt</button>
+        <button class="btn btn-ghost" onclick="closeModal('dossier-modal')">Fechar</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="roteiro-modal">
+    <div class="modal">
+      <button class="modal-close" onclick="closeModal('roteiro-modal')">×</button>
+      <h2 id="roteiro-title">Roteiro da Aula</h2>
+      <p class="subtitle">Use este roteiro para gravar. Edite se quiser e copie.</p>
+      <div id="roteiro-content"></div>
+      <div class="modal-actions">
+        <button class="btn btn-primary" onclick="copyRoteiro()">📋 Copiar roteiro</button>
+        <button class="btn btn-ghost" onclick="closeModal('roteiro-modal')">Fechar</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="page-modal">
+    <div class="modal">
+      <button class="modal-close" onclick="closeModal('page-modal')">×</button>
+      <h2>Texto da Página de Vendas</h2>
+      <p class="subtitle">Texto simples para produto de entrada (R$27–97). Cole na plataforma ou use como base.</p>
+      <div id="page-content"></div>
+      <div class="modal-actions">
+        <button class="btn btn-primary" onclick="copyPageCopy()">📋 Copiar texto</button>
+        <button class="btn btn-ghost" onclick="closeModal('page-modal')">Fechar</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const STORAGE_KEY = 'daideia_products';
+    const CURRENT_KEY = 'daideia_current_id';
+
+    function loadProducts() {
+      try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]'); }
+      catch { return []; }
+    }
+    function saveProducts(list) {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(list));
+    }
+    function getCurrentId() { return localStorage.getItem(CURRENT_KEY) || null; }
+    function setCurrentId(id) { localStorage.setItem(CURRENT_KEY, id); }
+
+    const STAGE_DEFS = [
+      { id: 1, name: 'Oportunidade' },
+      { id: 2, name: 'Público' },
+      { id: 3, name: 'Dor' },
+      { id: 4, name: 'Transformação' },
+      { id: 5, name: 'Produto' },
+      { id: 6, name: 'Promessa' },
+      { id: 7, name: 'Mercado' }
+    ];
+    var APP_VERSION = '2.2';
+
+    let products = loadProducts();
+    let currentId = getCurrentId();
+    let product = null;
+    let stages = null;
+    let currentStage = 1;
+    let stageState = null;
+    let viewMode = 'home'; // 'home' | 'product'
+
+    function createEmptyProduct(name) {
+      return {
+        id: 'p_' + Date.now(),
+        name: name || 'Novo Produto',
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        data: {
+          nome: '', publico: '', problema: '', promessa: '', transformacao: '',
+          estrutura: '', oferta: '', preco: '', bonus: '',
+          version: 2, oportunidade: '', doresDescartadas: [], dossiers: {},
+          ideiaEscolhida: null, publicoDetalhado: null, problemaDetalhado: null,
+          promessaEscolhida: null, estruturaAulas: null, ofertaCompleta: null,
+          bonusSelecionados: [], checklist: {}, pageCopy: null
+        },
+        stages: STAGE_DEFS.map((s, i) => ({ ...s, status: i === 0 ? 'current' : 'locked' })),
+        stageState: createEmptyStageState()
+      };
+    }
+
+    function createEmptyStageState() {
+      return {
+        1: { step: 'questions', answers: {}, options: null, selected: null },
+        2: { step: 'questions', answers: {}, profile: null },
+        3: { step: 'options', options: null, selected: null, discarded: [] },
+        4: { step: 'options', options: null, selected: null },
+        5: { step: 'options', options: null, selected: null, aulas: null },
+        6: { step: 'options', options: null, selected: null, data: null, bonusOptions: null, selectedBonus: [], fullCopy: null },
+        7: { step: 'hub' }
+      };
+    }
+
+    function getProductContext() {
+      var d = (product && product.data) ? product.data : {};
+      var pub = d.publicoDetalhado || {};
+      return {
+        oportunidade: d.oportunidade || d.ideiaEscolhida || d.nome || '',
+        nome: d.nome || '',
+        publico: d.publico || '',
+        publicoDetalhado: pub,
+        problema: d.problema || '',
+        doresDescartadas: d.doresDescartadas || [],
+        transformacao: d.transformacao || '',
+        promessa: d.promessa || '',
+        estrutura: d.estrutura || '',
+        estruturaAulas: d.estruturaAulas || null,
+        oferta: d.oferta || '',
+        preco: d.preco || '',
+        bonus: d.bonus || '',
+        garantia: d.garantia || '',
+        linguagem: pub.linguagem || '',
+        desejo: pub.desejo || '',
+        objecoes: pub.objecoes || ''
+      };
+    }
+
+    function contextPromptBlock() {
+      syncOfficialFromProductData();
+      var c = getProductContext();
+      var d = (product && product.data) ? product.data : {};
+      function orND(v) { return (v && String(v).trim()) ? String(v).trim() : '[INFORMAÇÃO NÃO DEFINIDA]'; }
+      var decisoes = [];
+      if (c.oportunidade || c.nome) decisoes.push('Oportunidade/Nome: ' + orND(c.oportunidade || c.nome));
+      if (c.publico) decisoes.push('Público: ' + c.publico);
+      if (c.problema) decisoes.push('Dor principal: ' + c.problema);
+      if (c.doresDescartadas && c.doresDescartadas.length) decisoes.push('Dores FORA deste produto: ' + c.doresDescartadas.join('; '));
+      if (c.transformacao) decisoes.push('Transformação: ' + c.transformacao);
+      if (c.promessa) decisoes.push('Promessa: ' + c.promessa);
+      if (c.estrutura) decisoes.push('Estrutura: ' + c.estrutura);
+      if (d.preco && d.preco !== '[NÃO DEFINIDO]') decisoes.push('Preço (decisão): ' + d.preco);
+      if (d.garantia && d.garantia !== '[NÃO DEFINIDA]') decisoes.push('Garantia (decisão): ' + d.garantia);
+      if (d.bonus) decisoes.push('Bônus aprovados: ' + d.bonus);
+      var fatos = [];
+      if (c.linguagem) fatos.push('Linguagem do público (aprovada): ' + c.linguagem);
+      if (c.desejo) fatos.push('Desejo registrado: ' + c.desejo);
+      if (c.objecoes) fatos.push('Objeções registradas: ' + c.objecoes);
+      var naoDef = [];
+      if (!c.publico) naoDef.push('público');
+      if (!c.problema) naoDef.push('dor principal');
+      if (!c.transformacao) naoDef.push('transformação');
+      if (!c.promessa) naoDef.push('promessa');
+      if (!d.preco || d.preco === '[NÃO DEFINIDO]') naoDef.push('preço');
+      if (!d.garantia || d.garantia === '[NÃO DEFINIDA]') naoDef.push('garantia');
+      return [
+        'CONTEXTO OFICIAL DO PRODUTO',
+        '',
+        'DECISÕES APROVADAS (não contradiga, não altere, não substitua):',
+        decisoes.length ? decisoes.map(function(x){return '- '+x;}).join('\n') : '- (nenhuma ainda)',
+        '',
+        'FATOS REGISTRADOS:',
+        fatos.length ? fatos.map(function(x){return '- '+x;}).join('\n') : '- (nenhum além das decisões)',
+        '',
+        'INFORMAÇÕES AINDA NÃO DEFINIDAS:',
+        naoDef.length ? '- ' + naoDef.join(', ') : '- (nenhuma crítica em aberto)',
+        '',
+        'REGRAS:',
+        '1. Não contradiga decisões aprovadas.',
+        '2. Não altere decisões aprovadas.',
+        '3. Não transforme hipótese em fato.',
+        '4. Não invente dados ausentes (renda, idade, CLT, mercado, preço, garantia, provas).',
+        '5. Se faltar informação, use [INFORMAÇÃO NÃO DEFINIDA] ou Hipótese da IA — confirmar.',
+        '6. UM público, UMA dor, UMA transformação, UM produto, UMA promessa.',
+        '7. Scores = Avaliação estratégica da IA, não validação de mercado.',
+        '8. Não há pesquisa externa nesta versão.'
+      ].join('\n');
+    }
+
+    function migrateProductV1ToV2(p) {
+      if (!p || !p.data) return p;
+      if (p.data.version >= 2) return p;
+      p.data.version = 2;
+      if (!p.data.oportunidade && (p.data.ideiaEscolhida || p.data.nome)) {
+        p.data.oportunidade = p.data.ideiaEscolhida || p.data.nome;
+      }
+      if (!p.data.doresDescartadas) p.data.doresDescartadas = [];
+      if (!p.data.dossiers) p.data.dossiers = {};
+      if (p.stages && p.stages.length) {
+        var names = ['Oportunidade','Público','Dor','Transformação','Produto','Promessa','Mercado'];
+        for (var i = 0; i < p.stages.length && i < 7; i++) {
+          p.stages[i].name = names[i];
+          p.stages[i].id = i + 1;
+        }
+      }
+      return p;
+    }
+
+    
+    // ==================== V2.2 MOTOR DE COERÊNCIA ====================
+    var EVIDENCE = { FACT: 'FATO', HYPOTHESIS: 'HIPÓTESE', DECISION: 'DECISÃO', EXTERNAL: 'EVIDÊNCIA EXTERNA' };
+    var FIELD_STATUS = { UNDEFINED: 'NÃO DEFINIDO', HYPOTHESIS: 'HIPÓTESE', APPROVED: 'APROVADO' };
+
+    function emptyOfficialField() {
+      return { value: null, status: FIELD_STATUS.UNDEFINED, evidence: null, updatedAt: null };
+    }
+
+    function ensureOfficialContext(data) {
+      if (!data) data = {};
+      if (!data.official) data.official = {};
+      var keys = ['oportunidade','publico','dor','transformacao','produto','estrutura','promessa','oferta','bonus','preco','garantia','cta','provas','formato','qtdAulas'];
+      keys.forEach(function(k) {
+        if (!data.official[k]) data.official[k] = emptyOfficialField();
+      });
+      return data.official;
+    }
+
+    function setOfficialDecision(field, value, evidence) {
+      if (!product || !product.data) return;
+      ensureOfficialContext(product.data);
+      product.data.official[field] = {
+        value: value,
+        status: FIELD_STATUS.APPROVED,
+        evidence: evidence || EVIDENCE.DECISION,
+        updatedAt: new Date().toISOString()
+      };
+    }
+
+    function setOfficialHypothesis(field, value) {
+      if (!product || !product.data) return;
+      ensureOfficialContext(product.data);
+      var cur = product.data.official[field];
+      if (cur && cur.status === FIELD_STATUS.APPROVED) return; // não sobrescreve decisão
+      product.data.official[field] = {
+        value: value,
+        status: FIELD_STATUS.HYPOTHESIS,
+        evidence: EVIDENCE.HYPOTHESIS,
+        updatedAt: new Date().toISOString()
+      };
+    }
+
+    function getOfficial(field) {
+      if (!product || !product.data) return emptyOfficialField();
+      ensureOfficialContext(product.data);
+      return product.data.official[field] || emptyOfficialField();
+    }
+
+    function isApproved(field) {
+      var f = getOfficial(field);
+      return f.status === FIELD_STATUS.APPROVED && f.value != null && String(f.value).trim() !== '' && String(f.value).indexOf('NÃO DEFINIDO') < 0;
+    }
+
+    function badgeFor(field) {
+      var f = getOfficial(field);
+      if (f.status === FIELD_STATUS.APPROVED) return '[DECISÃO APROVADA]';
+      if (f.status === FIELD_STATUS.HYPOTHESIS) return '[HIPÓTESE DA IA]';
+      return '[NÃO DEFINIDO]';
+    }
+
+    function syncOfficialFromProductData() {
+      if (!product || !product.data) return;
+      var d = product.data;
+      ensureOfficialContext(d);
+      // Migra campos legados aprovados sem official
+      if (d.oportunidade || d.nome) {
+        if (d.official.oportunidade.status !== FIELD_STATUS.APPROVED && (d.ideiaEscolhida || d.oportunidade))
+          setOfficialDecision('oportunidade', d.oportunidade || d.nome);
+      }
+      if (d.publico && d.official.publico.status !== FIELD_STATUS.APPROVED)
+        setOfficialDecision('publico', d.publico);
+      if (d.problema && d.official.dor.status !== FIELD_STATUS.APPROVED)
+        setOfficialDecision('dor', d.problema);
+      if (d.transformacao && d.official.transformacao.status !== FIELD_STATUS.APPROVED)
+        setOfficialDecision('transformacao', d.transformacao);
+      if (d.nome && d.official.produto.status !== FIELD_STATUS.APPROVED)
+        setOfficialDecision('produto', d.nome);
+      if (d.estruturaAulas && d.estruturaAulas.length && d.official.estrutura.status !== FIELD_STATUS.APPROVED) {
+        setOfficialDecision('estrutura', d.estrutura || (d.estruturaAulas.length + ' aulas'));
+        setOfficialDecision('qtdAulas', d.estruturaAulas.length);
+      }
+      if (d.promessa && d.official.promessa.status !== FIELD_STATUS.APPROVED)
+        setOfficialDecision('promessa', d.promessa);
+      if (d.preco && d.preco.indexOf('NÃO DEFINIDO') < 0 && d.official.preco.status !== FIELD_STATUS.APPROVED)
+        setOfficialDecision('preco', d.preco);
+      if (d.garantia && d.garantia.indexOf('NÃO DEFINIDA') < 0 && d.official.garantia.status !== FIELD_STATUS.APPROVED)
+        setOfficialDecision('garantia', d.garantia);
+      if (d.bonus && d.official.bonus.status !== FIELD_STATUS.APPROVED)
+        setOfficialDecision('bonus', d.bonus);
+    }
+
+    function countAulasFromText(text) {
+      if (!text) return null;
+      var m = String(text).match(/(\d+)\s*aulas?/i);
+      if (m) return parseInt(m[1], 10);
+      return null;
+    }
+
+    function extractAulaCountFromStructure(aulas) {
+      if (Array.isArray(aulas)) return aulas.length;
+      return countAulasFromText(aulas);
+    }
+
+    /** Valida coerência do produto. Retorna { ok, errors[], warnings[] } */
+    function validateProductConsistency(options) {
+      options = options || {};
+      syncOfficialFromProductData();
+      var d = product.data;
+      var errors = [];
+      var warnings = [];
+      var off = ensureOfficialContext(d);
+
+      // Qtd aulas: produto vs estrutura
+      var qtdProduto = null;
+      if (isApproved('qtdAulas')) qtdProduto = parseInt(getOfficial('qtdAulas').value, 10);
+      if (!qtdProduto && d.estruturaAulas) qtdProduto = d.estruturaAulas.length;
+      // from packaging selection stored
+      if (stageState && stageState[5] && stageState[5].options && stageState[5].selected != null) {
+        var it = stageState[5].options.items[stageState[5].selected];
+        if (it && it.aulas) {
+          var qa = parseInt(String(it.aulas).replace(/\D/g,''), 10);
+          if (qa) qtdProduto = qtdProduto || qa;
+        }
+      }
+      var qtdEstrutura = d.estruturaAulas ? d.estruturaAulas.length : null;
+      if (qtdProduto && qtdEstrutura && qtdProduto !== qtdEstrutura) {
+        errors.push({
+          code: 'AULAS_MISMATCH',
+          title: 'Inconsistência: quantidade de aulas',
+          message: 'Seu produto foi definido com ' + qtdProduto + ' aulas, mas a estrutura contém ' + qtdEstrutura + ' aulas.',
+          actions: ['Corrigir estrutura', 'Alterar produto', 'Editar manualmente']
+        });
+      }
+
+      // Promessa vs transformação
+      if (isApproved('transformacao') && isApproved('promessa')) {
+        var tr = String(getOfficial('transformacao').value).toLowerCase();
+        var pr = String(getOfficial('promessa').value).toLowerCase();
+        var riskWords = ['eliminar completamente', 'elimine completamente', 'nunca mais', 'para sempre', 'garantido', 'sem esforço', 'em 24 horas', 'fique rico', 'acabar com toda', 'ansiedade'];
+        var hasRisk = riskWords.some(function(w){ return pr.indexOf(w) >= 0; });
+        // crude: promessa mentions things not in transformação
+        if (hasRisk) {
+          warnings.push({
+            code: 'PROMISE_RISK',
+            title: 'Alerta de promessa',
+            message: 'A promessa parece mais forte ou absoluta do que a transformação aprovada. Revise conscientemente.\nTransformação: ' + getOfficial('transformacao').value + '\nPromessa: ' + getOfficial('promessa').value
+          });
+        }
+      }
+
+      // Preço/garantia não definidos como oficiais se ainda placeholders
+      if (options.requirePrice) {
+        if (!isApproved('preco') && (!d.preco || d.preco.indexOf('NÃO DEFINIDO') >= 0)) {
+          errors.push({ code: 'PRICE_UNDEFINED', title: 'Preço não definido', message: 'Defina o preço oficial antes de continuar. A IA não pode inventar preço.' });
+        }
+      }
+      if (options.requireGarantia) {
+        if (!isApproved('garantia') && (!d.garantia || d.garantia.indexOf('NÃO DEFINIDA') >= 0)) {
+          warnings.push({ code: 'GARANTIA_UNDEFINED', title: 'Garantia não definida', message: 'Garantia ainda não foi definida como decisão.' });
+        }
+      }
+
+      return { ok: errors.length === 0, errors: errors, warnings: warnings };
+    }
+
+    /** Valida texto da página contra contexto oficial */
+    function validatePageAgainstOfficialContext(pageText) {
+      syncOfficialFromProductData();
+      var d = product.data;
+      var issues = [];
+      var text = String(pageText || '');
+      if (!text.trim()) {
+        return { ok: false, issues: [{ code: 'EMPTY', message: 'Página vazia.' }] };
+      }
+
+      // Aulas count in page
+      var pageAulas = countAulasFromText(text);
+      var officialAulas = isApproved('qtdAulas') ? parseInt(getOfficial('qtdAulas').value, 10) : (d.estruturaAulas ? d.estruturaAulas.length : null);
+      if (pageAulas && officialAulas && pageAulas !== officialAulas) {
+        issues.push({ code: 'PAGE_AULAS', severity: 'error', message: 'Página menciona ' + pageAulas + ' aulas, mas o produto oficial tem ' + officialAulas + ' aulas.' });
+      }
+
+      // Unapproved CLT / renda patterns
+      if (/\bCLT\b/i.test(text) || /salários?\s*mínimos?/i.test(text)) {
+        var pub = String(getOfficial('publico').value || d.publico || '');
+        if (!/CLT/i.test(pub) && !/salário/i.test(pub)) {
+          issues.push({ code: 'PAGE_PUBLICO_HYPOTHESIS', severity: 'error', message: 'A página usa CLT/faixa salarial que não está no público aprovado. Isso é hipótese não aprovada.' });
+        }
+      }
+
+      // Price in page vs official
+      if (isApproved('preco')) {
+        var preco = String(getOfficial('preco').value);
+        var num = preco.replace(/[^\d]/g,'');
+        if (num && text.indexOf(num) < 0 && /R\$\s*\d+/.test(text)) {
+          issues.push({ code: 'PAGE_PRICE', severity: 'warning', message: 'A página parece mostrar um preço diferente do preço oficial (' + preco + ').' });
+        }
+      } else if (/R\$\s*\d+/.test(text) && text.indexOf('NÃO DEFINIDO') < 0) {
+        issues.push({ code: 'PAGE_PRICE_UNAPPROVED', severity: 'error', message: 'A página apresenta preço numérico, mas não há preço oficial aprovado.' });
+      }
+
+      // Bonus: only approved
+      if (stageState && stageState[6] && stageState[6].bonusOptions) {
+        var selected = stageState[6].selectedBonus || [];
+        stageState[6].bonusOptions.forEach(function(b, i) {
+          if (selected.indexOf(i) < 0 && b.nome && text.indexOf(b.nome) >= 0) {
+            issues.push({ code: 'PAGE_BONUS_UNAPPROVED', severity: 'error', message: 'Bônus não aprovado aparece na página: "' + b.nome + '".' });
+          }
+        });
+      }
+
+      var errors = issues.filter(function(x){ return x.severity === 'error'; });
+      return { ok: errors.length === 0, issues: issues };
+    }
+
+    function showConsistencyModal(result, onContinue) {
+      var msgs = [];
+      (result.errors || []).forEach(function(e) {
+        msgs.push('⛔ ' + (e.title || e.code) + '\n' + e.message);
+      });
+      (result.warnings || []).forEach(function(w) {
+        msgs.push('⚠️ ' + (w.title || w.code) + '\n' + w.message);
+      });
+      if (!msgs.length) {
+        if (onContinue) onContinue();
+        return true;
+      }
+      var text = 'Validação de coerência (V2.2)\n\n' + msgs.join('\n\n');
+      if (result.errors && result.errors.length) {
+        text += '\n\nCorrija as inconsistências antes de continuar.';
+        alert(text);
+        return false;
+      }
+      text += '\n\nDeseja continuar mesmo assim?';
+      if (confirm(text)) {
+        if (onContinue) onContinue();
+        return true;
+      }
+      return false;
+    }
+
+    function migrateProductV22(p) {
+      if (!p || !p.data) return p;
+      p = migrateProductV1ToV2(p);
+      ensureOfficialContext(p.data);
+      // sync from legacy
+      var d = p.data;
+      product = p; // temp for setters - careful
+      // don't use setters that need global product - set directly
+      function approveIf(field, val) {
+        if (val && d.official[field].status !== FIELD_STATUS.APPROVED) {
+          d.official[field] = { value: val, status: FIELD_STATUS.APPROVED, evidence: EVIDENCE.DECISION, updatedAt: new Date().toISOString() };
+        }
+      }
+      approveIf('oportunidade', d.oportunidade || d.nome);
+      approveIf('publico', d.publico);
+      approveIf('dor', d.problema);
+      approveIf('transformacao', d.transformacao);
+      approveIf('produto', d.nome);
+      approveIf('promessa', d.promessa);
+      if (d.estruturaAulas && d.estruturaAulas.length) {
+        approveIf('estrutura', d.estrutura);
+        approveIf('qtdAulas', d.estruturaAulas.length);
+      }
+      if (d.preco && String(d.preco).indexOf('NÃO DEFINIDO') < 0) approveIf('preco', d.preco);
+      if (d.garantia && String(d.garantia).indexOf('NÃO DEFINIDA') < 0) approveIf('garantia', d.garantia);
+      if (d.bonus) approveIf('bonus', d.bonus);
+      return p;
+    }
+
+
+    function getWorkingSnapshot() {
+      return {
+        id: product.id,
+        name: product.data.nome ? product.data.nome.substring(0, 40) : product.name,
+        createdAt: product.createdAt,
+        updatedAt: new Date().toISOString(),
+        data: JSON.parse(JSON.stringify(product.data)),
+        stages: JSON.parse(JSON.stringify(stages)),
+        stageState: JSON.parse(JSON.stringify(stageState))
+      };
+    }
+
+        function persistCurrent() {
+      if (!product || !currentId) return;
+      // Do not save empty drafts to the list
+      if (!productHasContent(product)) return;
+      var snap = getWorkingSnapshot();
+      var idx = -1;
+      for (var i = 0; i < products.length; i++) {
+        if (products[i].id === currentId) { idx = i; break; }
+      }
+      if (idx >= 0) products[idx] = snap;
+      else products.unshift(snap);
+      saveProducts(products);
+      renderProductsList();
+    }
+
+    function loadProduct(id) {
+      var p = products.find(function(x){ return x.id === id; });
+      if (!p) return;
+      p = migrateProductV1ToV2(p);
+      currentId = id;
+      setCurrentId(id);
+      product = JSON.parse(JSON.stringify(p));
+      product = migrateProductV22(product);
+      stages = product.stages;
+      // ensure stage names are V2
+      var names = ['Oportunidade','Público','Dor','Transformação','Produto','Promessa','Mercado'];
+      for (var i = 0; i < stages.length && i < 7; i++) {
+        stages[i].name = names[i];
+        stages[i].id = i + 1;
+      }
+      stageState = product.stageState || createEmptyStageState();
+      // ensure all stageState keys 1-7 exist
+      var emptySS = createEmptyStageState();
+      for (var k = 1; k <= 7; k++) {
+        if (!stageState[k]) stageState[k] = emptySS[k];
+      }
+      if (stageState[3] && stageState[3].step === 'analysis') {
+        stageState[3].step = stageState[3].problem ? 'done' : 'options';
+      }
+      // Repair stage statuses: unlock up to furthest progress so user can re-enter
+      if (!stages || !stages.length) {
+        stages = STAGE_DEFS.map(function(s, i) {
+          return { id: s.id, name: s.name, status: i === 0 ? 'current' : 'locked' };
+        });
+        product.stages = stages;
+      }
+      var completedIds = stages.filter(function(s){ return s.status === 'completed'; }).map(function(s){ return s.id; });
+      var maxCompleted = completedIds.length ? Math.max.apply(null, completedIds) : 0;
+      var cur = stages.find(function(s){ return s.status === 'current'; });
+      var curId = cur ? cur.id : (maxCompleted + 1);
+      if (curId > 7) curId = 7;
+      // Unlock all stages up to current (completed + current editable)
+      stages.forEach(function(s) {
+        if (s.id < curId) s.status = 'completed';
+        else if (s.id === curId) s.status = (s.status === 'completed' ? 'completed' : 'current');
+        else if (s.id === curId + 1 && maxCompleted >= curId) { /* keep */ }
+        // Never leave user stuck: stages <= maxCompleted+1 must not be locked
+        if (s.id <= maxCompleted + 1 && s.status === 'locked') {
+          s.status = (s.id <= maxCompleted) ? 'completed' : 'current';
+        }
+      });
+      // Ensure at least one current
+      if (!stages.some(function(s){ return s.status === 'current'; })) {
+        var next = stages.find(function(s){ return s.status !== 'completed'; }) || stages[0];
+        if (next.status === 'locked') next.status = 'current';
+      }
+      cur = stages.find(function(s){ return s.status === 'current'; });
+      currentStage = cur ? cur.id : Math.min(7, maxCompleted + 1 || 1);
+      product.stages = stages;
+      product.stageState = stageState;
+      try {
+        renderAll();
+      } catch (e) {
+        console.error('Erro ao abrir produto:', e);
+        alert('Erro ao abrir o produto. Tente novamente. Detalhe: ' + (e.message || e));
+      }
+    }
+
+    function newProduct_old() {
+      persistCurrent();
+      const p = createEmptyProduct('Novo Produto');
+      products.unshift(p);
+      saveProducts(products);
+      loadProduct(p.id);
+    }
+
+    function resetCurrent() {
+      if (!confirm('Zerar o produto atual? O progresso desta versão será apagado. Outros produtos salvos não são afetados.')) return;
+      const name = product?.name || 'Novo Produto';
+      const id = currentId;
+      const p = createEmptyProduct(name);
+      p.id = id;
+      product = p;
+      stages = p.stages;
+      stageState = p.stageState;
+      currentStage = 1;
+      persistCurrent();
+      renderAll();
+    }
+
+    function renderProductsList() {
+      const el = document.getElementById('products-list');
+      if (!products.length) {
+        el.innerHTML = '<div style="padding:8px 12px;font-size:11px;color:var(--text-muted)">Nenhum produto ainda</div>';
+        return;
+      }
+      el.innerHTML = products.map(p => `
+        <div class="product-item ${p.id === currentId ? 'active' : ''}" onclick="openProduct('${p.id}')">
+          <span class="prod-icon">📦</span>
+          <span class="prod-name">${p.name || 'Sem nome'}</span>
+        </div>
+      `).join('');
+    }
+
+    function renderNav() {
+      document.getElementById('stages-nav').innerHTML = stages.map(s => {
+        let icon = '⚪';
+        if (s.status === 'locked') icon = '🔒';
+        else if (s.status === 'completed') icon = '🟢';
+        else if (s.status === 'current') icon = '🟡';
+        return `<div class="stage-item ${s.status} ${s.id === currentStage ? 'active' : ''}" onclick="goToStage(${s.id})">
+          <span class="stage-status">${icon}</span>
+          <div class="stage-info">
+            <div class="stage-num">Etapa 0${s.id}</div>
+            <div class="stage-name">${s.name}</div>
+          </div>
+        </div>`;
+      }).join('');
+    }
+
+    function updateProgress() {
+      const completed = stages.filter(s => s.status === 'completed').length;
+      const pct = Math.round((completed / 7) * 100);
+      document.getElementById('progress-fill').style.width = pct + '%';
+      document.getElementById('progress-text').textContent = pct + '% — ' + completed + ' de 7 etapas concluídas';
+    }
+
+    function updateSummary(){ updateProductPanel(); }
+    function updateProductPanel() {
+      const d = product.data;
+      const fields = [
+        ['sum-nome', d.nome], ['sum-publico', d.publico], ['sum-problema', d.problema],
+        ['sum-promessa', d.promessa], ['sum-transformacao', d.transformacao],
+        ['sum-estrutura', d.estrutura], ['sum-oferta', d.oferta],
+        ['sum-preco', d.preco], ['sum-bonus', d.bonus]
+      ];
+      fields.forEach(([id, val]) => {
+        const el = document.getElementById(id);
+        if (val) { el.textContent = val; el.classList.remove('empty'); }
+        else { el.textContent = 'Ainda não definido'; el.classList.add('empty'); }
+      });
+      document.getElementById('topbar-title').textContent = d.nome || 'Seu Produto Mínimo';
+    }
+
+
+    
+    
+    function renderHome() {
+      if (viewMode === 'product' && product && currentId) {
+        try {
+          if (productHasContent(product)) persistCurrent();
+          // discard empty draft - do not add to list
+        } catch(e) {}
+      }
+      viewMode = 'home';
+      currentId = null;
+      if (typeof cleanEmptyProducts === 'function') cleanEmptyProducts();
+
+      // Hide stages, show only top nav buttons (already permanent)
+      var st = document.getElementById('section-stages-title');
+      if (st) st.style.display = 'none';
+      var sn = document.getElementById('stages-nav');
+      if (sn) { sn.innerHTML = ''; sn.style.display = 'none'; }
+      var br = document.getElementById('btn-reset-current');
+      if (br) br.style.display = 'none';
+      var pl = document.getElementById('products-list');
+      if (pl) pl.style.display = 'none';
+
+      // Highlight nav
+      var nm = document.getElementById('nav-meus-produtos');
+      var nc = document.getElementById('nav-criar');
+      if (nm) { nm.style.borderColor = 'var(--accent-blue)'; nm.style.color = 'var(--accent-blue)'; }
+      if (nc) { nc.style.borderColor = ''; nc.style.color = ''; }
+
+      var content = document.getElementById('content');
+      var cardsHtml = '';
+      if (!products.length) {
+        cardsHtml = '<div style="text-align:center;padding:48px 20px;color:var(--text-muted)"><p style="font-size:15px;margin-bottom:8px">Nenhum produto criado ainda.</p><p style="font-size:13px">Clique em <strong style="color:var(--text-secondary)">+ Criar produto</strong> na barra lateral.</p></div>';
+      } else {
+        cardsHtml = '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:16px">';
+        for (var i = 0; i < products.length; i++) {
+          var p = products[i];
+          var d = p.data || {};
+          var completed = 0;
+          if (p.stages) {
+            for (var j = 0; j < p.stages.length; j++) {
+              if (p.stages[j].status === 'completed') completed++;
+            }
+          }
+          var title = p.name || d.nome || 'Sem nome';
+          var preco = d.preco || 'Preço não definido';
+          var publico = d.publico ? String(d.publico).substring(0, 80) : 'Público não definido';
+          cardsHtml += '<div class="option-card" style="cursor:pointer;margin:0" data-pid="' + p.id + '" onclick="openProduct(this.getAttribute(\'data-pid\'))">';
+          cardsHtml += '<div class="option-title" style="font-size:14px">' + title + '</div>';
+          cardsHtml += '<div style="font-size:12px;color:var(--text-muted);margin-bottom:8px">' + preco + '</div>';
+          cardsHtml += '<div style="font-size:12px;color:var(--text-secondary)">' + publico + '</div>';
+          cardsHtml += '<div style="display:flex;justify-content:space-between;align-items:center;margin-top:12px">';
+          cardsHtml += '<span style="font-size:11px;color:var(--text-muted)">' + completed + ' de 7 etapas</span>';
+          cardsHtml += '<button type="button" data-del="' + p.id + '" style="background:transparent;border:1px solid var(--border);color:var(--text-muted);font-size:11px;padding:4px 10px;border-radius:6px;cursor:pointer;font-family:inherit" onclick="event.stopPropagation();deleteProduct(this.getAttribute(\'data-del\'))">Excluir</button>';
+          cardsHtml += '</div>';
+          cardsHtml += '</div>';
+        }
+        cardsHtml += '</div>';
+      }
+
+      content.innerHTML = '<div class="stage-panel active" style="max-width:900px">' +
+        '<div class="stage-header"><h2>Meus Produtos</h2><p>Clique em um produto para continuar de onde parou.</p></div>' +
+        cardsHtml +
+        '</div>';
+
+      document.getElementById('topbar-title').textContent = 'Meus Produtos';
+      document.getElementById('progress-fill').style.width = '0%';
+      document.getElementById('progress-text').textContent = products.length + ' produto(s)';
+
+      var ids = ['sum-nome','sum-publico','sum-problema','sum-promessa','sum-transformacao','sum-estrutura','sum-oferta','sum-preco','sum-bonus'];
+      for (var k = 0; k < ids.length; k++) {
+        var el = document.getElementById(ids[k]);
+        if (el) { el.textContent = '—'; el.classList.add('empty'); }
+      }
+    }
+
+    function openProduct(id) {
+      viewMode = 'product';
+
+      var st = document.getElementById('section-stages-title');
+      if (st) st.style.display = '';
+      var sn = document.getElementById('stages-nav');
+      if (sn) sn.style.display = '';
+      var br = document.getElementById('btn-reset-current');
+      if (br) br.style.display = '';
+
+      var nm = document.getElementById('nav-meus-produtos');
+      var nc = document.getElementById('nav-criar');
+      if (nm) { nm.style.borderColor = ''; nm.style.color = ''; }
+      if (nc) { nc.style.borderColor = ''; nc.style.color = ''; }
+
+      loadProduct(id);
+    }
+
+    function createAndOpen() {
+      // Save current product only if it has real content
+      if (viewMode === 'product' && product && currentId) {
+        try {
+          if (productHasContent(product)) persistCurrent();
+        } catch(e) {}
+      }
+      // Create draft - NOT added to products list until etapa 1 is completed
+      var p = createEmptyProduct('Novo Produto');
+      product = p;
+      stages = p.stages;
+      stageState = p.stageState;
+      currentId = p.id;
+      currentStage = 1;
+      viewMode = 'product';
+
+      var st = document.getElementById('section-stages-title');
+      if (st) st.style.display = '';
+      var sn = document.getElementById('stages-nav');
+      if (sn) sn.style.display = '';
+      var br = document.getElementById('btn-reset-current');
+      if (br) br.style.display = '';
+
+      var nm = document.getElementById('nav-meus-produtos');
+      var nc = document.getElementById('nav-criar');
+      if (nm) { nm.style.borderColor = ''; nm.style.color = ''; }
+      if (nc) { nc.style.borderColor = ''; nc.style.color = ''; }
+
+      renderAll();
+    }
+
+    
+    function cleanEmptyProducts() {
+      products = products.filter(function(p) {
+        return productHasContent(p);
+      });
+      saveProducts(products);
+    }
+
+    function productHasContent(p) {
+      if (!p || !p.data) return false;
+      var d = p.data;
+      // Only count as real product if etapa 1 was completed (has nome from chosen idea)
+      if (d.nome && String(d.nome).trim()) return true;
+      if (d.ideiaEscolhida) return true;
+      return false;
+    }
+
+    function deleteProduct(id) {
+      if (!confirm('Excluir este produto? Essa ação não pode ser desfeita.')) return;
+      products = products.filter(function(p) { return p.id !== id; });
+      saveProducts(products);
+      if (currentId === id) {
+        currentId = null;
+        product = null;
+      }
+      renderHome();
+    }
+
+
+    function renderAll() {
+      renderProductsList();
+      renderNav();
+      updateProgress();
+      updateProductPanel();
+      renderStage();
+    }
+
+    function goToStage(id) {
+      if (!stages) return;
+      var stage = stages.find(function(s){ return s.id === id; });
+      if (!stage) return;
+      // Bloqueia só locked; completed e current são acessíveis (refazer etapa)
+      if (stage.status === 'locked') {
+        // Se etapas anteriores estão concluídas, destrava
+        var prevOk = stages.filter(function(s){ return s.id < id; }).every(function(s){ return s.status === 'completed' || s.status === 'current'; });
+        if (prevOk && id > 1) {
+          stage.status = 'current';
+        } else {
+          return;
+        }
+      }
+      currentStage = id;
+      renderNav();
+      renderStage();
+    }
+
+    function completeStage(id) {
+      var stage = stages.find(function(s){ return s.id === id; });
+      if (stage) stage.status = 'completed';
+      if (id < 7) {
+        var next = stages.find(function(s){ return s.id === id + 1; });
+        if (next && next.status === 'locked') next.status = 'current';
+      }
+      buildPartialDossier(id);
+      persistCurrent();
+      updateProgress();
+      renderNav();
+    }
+
+    function buildPartialDossier(id) {
+      if (!product) return;
+      if (!product.data.dossiers) product.data.dossiers = {};
+      var d = product.data;
+      var pub = d.publicoDetalhado || {};
+      if (id === 1) {
+        product.data.dossiers.d01 = '# DOSSIÊ 01 — Fundação do Produto Mínimo\n\n' +
+          '## Produto\n' + (d.nome||'') + '\n\n' +
+          '## Problema\n' + (d.problema||'') + '\n\n' +
+          '## Transformação\n' + (d.transformacao||'') + '\n\n' +
+          '## Ideia escolhida\n' + (d.ideiaEscolhida||d.nome||'') + '\n';
+      }
+      if (id === 2) {
+        product.data.dossiers.d01 = (product.data.dossiers.d01||'') + '\n## Público Ideal\n' + (d.publico||'') +
+          '\n\n## Linguagem\n' + (pub.linguagem||'') +
+          '\n\n## Desejo\n' + (pub.desejo||'') +
+          '\n\n## Objeções\n' + (pub.objecoes||'') + '\n';
+      }
+      if (id === 3) {
+        product.data.dossiers.d01 = (product.data.dossiers.d01||'') + '\n## Problema Principal (validado)\n' + (d.problema||'') + '\n';
+      }
+      if (id === 4) {
+        product.data.dossiers.d02 = '# DOSSIÊ 02 — Posicionamento Estratégico\n\n' +
+          '## Público\n' + (d.publico||'') + '\n\n' +
+          '## Problema\n' + (d.problema||'') + '\n\n' +
+          '## Transformação\n' + (d.transformacao||'') + '\n\n' +
+          '## Promessa Oficial\n' + (d.promessa||'') + '\n\n' +
+          '## Linguagem\n' + (pub.linguagem||'') + '\n';
+      }
+      if (id === 5) {
+        product.data.dossiers.d03 = '# DOSSIÊ 03 — Estrutura do Produto Mínimo\n\n' +
+          '## Nome\n' + (d.nome||'') + '\n\n' +
+          '## Promessa\n' + (d.promessa||'') + '\n\n' +
+          '## Estrutura\n' + (d.estrutura||'') + '\n';
+      }
+      if (id === 6) {
+        product.data.dossiers.d04 = '# DOSSIÊ 04 — Oferta\n\n' +
+          '## Nome\n' + (d.nome||'') + '\n\n' +
+          '## Promessa\n' + (d.promessa||'') + '\n\n' +
+          '## Preço\n' + (d.preco||'') + '\n\n' +
+          '## Oferta\n' + (d.oferta||'') + '\n\n' +
+          '## Bônus\n' + (d.bonus||'') + '\n\n' +
+          '## Copy\n' + (d.copyOferta||'') + '\n';
+      }
+    }
+
+    function scoreClass(n) {
+      if (n >= 8) return 'score-high';
+      if (n >= 5) return 'score-mid';
+      return 'score-low';
+    }
+
+    function backBtn(stageId, targetStep) {
+      return '<button class="btn btn-ghost" onclick="goBack(' + stageId + ', \'' + (targetStep || '') + '\')">← Voltar</button>';
+    }
+
+    function goBack(stageId, targetStep) {
+      if (targetStep) stageState[stageId].step = targetStep;
+      else {
+        const st = stageState[stageId];
+        if (stageId === 1 && (st.step === 'options' || st.step === 'done')) st.step = 'questions';
+        else if (stageId === 2 && (st.step === 'profile' || st.step === 'done')) st.step = 'questions';
+        else if (stageId === 3 && st.step === 'done') st.step = 'result';
+        else if (stageId === 4 && st.step === 'done') st.step = 'options';
+        else if (stageId === 5 && st.step === 'done') st.step = 'structure';
+        else if (stageId === 6) {
+          if (st.step === 'done') st.step = 'copy';
+          else if (st.step === 'copy') st.step = 'oferta';
+        }
+      }
+      renderStage();
+    }
+
+    function closeModal(id) {
+      document.getElementById(id).classList.remove('open');
+    }
+
+    function renderStage() {
+      const content = document.getElementById('content');
+      const st = stageState[currentStage];
+      if (currentStage === 1) renderStage1(content, st);
+      else if (currentStage === 2) renderStage2(content, st);
+      else if (currentStage === 3) renderStage3(content, st);
+      else if (currentStage === 4) renderStage4(content, st);
+      else if (currentStage === 5) renderStage5(content, st);
+      else if (currentStage === 6) renderStage6(content, st);
+      else if (currentStage === 7) renderStage7(content, st);
+    }
+
+    // STAGE 1
+    function renderStage1(container, st) {
+      if (st.step === 'questions') {
+        container.innerHTML = '<div class="stage-panel active"><div class="stage-header"><h2>Etapa 1 — Oportunidade: onde existe um Produto Mínimo no que você já sabe.</h2><p>Não crie o produto ainda. Responda com honestidade. A IA vai propor até 3 oportunidades e você escolhe UMA.</p></div>' +
+          [['q1','O que você sabe fazer bem?'],['q2','Sobre qual assunto você poderia ensinar alguém?'],['q3','Que tipo de pessoa você gostaria de ajudar?'],['q4','Que resultado você gostaria de ajudar essa pessoa a alcançar?'],['q5','As pessoas já fazem perguntas para você sobre esse assunto?']].map(function(q,i){
+            return '<div class="question-block"><div class="question-label"><span class="q-num">'+(i+1)+'</span> '+q[1]+'</div><textarea id="'+q[0]+'" placeholder="Seja específico...">'+(st.answers[q[0]]||'')+'</textarea></div>';
+          }).join('') +
+          '<div class="actions"><button class="btn btn-primary" onclick="analyzeIdeia()">Analisar oportunidades →</button></div></div>';
+      } else if (st.step === 'loading') {
+        container.innerHTML = '<div class="stage-panel active"><div class="loading"><div class="spinner"></div><p>Analisando oportunidades de Produto Mínimo...</p></div></div>';
+      } else if (st.step === 'options') {
+        var opts = st.options;
+        container.innerHTML = '<div class="stage-panel active"><div class="stage-header"><h2>Encontrei estas oportunidades de Produto Mínimo</h2><p>Escolha a que faz mais sentido para você agora.</p></div><div class="info-banner"><strong>Recomendação:</strong> '+opts.recommendation+'</div>' +
+          opts.items.map(function(o,i){
+            return '<div class="option-card '+(o.recommended?'recommended':'')+' '+(st.selected===i?'selected':'')+'" onclick="selectIdeia('+i+')"><div class="option-title">OPÇÃO '+(i+1)+' — '+o.nome+'</div><div class="option-field"><strong>Problema resolvido</strong><span>'+o.problema+'</span></div><div class="option-field"><strong>Transformação</strong><span>'+o.transformacao+'</span></div><div class="option-field"><strong>Por que existe demanda</strong><span>'+o.demanda+'</span></div><div class="scores"><div class="score-item"><div class="label">Desejo</div><div class="value '+scoreClass(o.scores.desejo)+'">'+o.scores.desejo+'/10</div></div><div class="score-item"><div class="label">Clareza</div><div class="value '+scoreClass(o.scores.clareza)+'">'+o.scores.clareza+'/10</div></div><div class="score-item"><div class="label">Facilidade</div><div class="value '+scoreClass(o.scores.facilidade)+'">'+o.scores.facilidade+'/10</div></div><div class="score-item"><div class="label">Potencial</div><div class="value '+scoreClass(o.scores.potencial)+'">'+o.scores.potencial+'/10</div></div></div></div>';
+          }).join('') +
+          '<div class="actions">'+backBtn(1,'questions')+'<button class="btn btn-primary" id="btn-escolher-ideia" '+(st.selected===null?'disabled':'')+' onclick="confirmIdeia()">Escolher esta ideia</button></div></div>';
+      } else if (st.step === 'done') {
+        container.innerHTML = '<div class="stage-panel active"><div class="success-banner">✓ Etapa 01 concluída — Ideia definida</div><div class="ai-result"><h3>Ideia escolhida</h3><div class="profile-grid"><div class="profile-item full"><label>Nome</label><div class="value">'+product.data.nome+'</div></div><div class="profile-item full"><label>Problema</label><div class="value">'+product.data.problema+'</div></div><div class="profile-item full"><label>Transformação</label><div class="value">'+product.data.transformacao+'</div></div></div></div><div class="actions">'+backBtn(1,'options')+'<button class="btn btn-secondary" onclick="stageState[1].step=\'questions\';renderStage()">✏️ Editar respostas</button><button class="btn btn-primary" onclick="goToStage(2)">Continuar para Público →</button></div></div>';
+      }
+    }
+
+    function analyzeIdeia() {
+      var answers = {};
+      ['q1','q2','q3','q4','q5'].forEach(function(k){ answers[k] = document.getElementById(k).value.trim(); });
+      if (!answers.q1 || !answers.q2 || !answers.q3) { alert('Preencha pelo menos as 3 primeiras perguntas.'); return; }
+      stageState[1].answers = answers;
+      stageState[1].step = 'loading';
+      stageState[1].selected = null;
+      renderStage();
+      runIdeiaAI(answers);
+    }
+
+    async function runIdeiaAI(answers) {
+      if (!hasRealAI()) {
+        setTimeout(function(){
+          stageState[1].options = generateIdeiaOptions(answers);
+          stageState[1].step = 'options';
+          renderStage();
+        }, 1200);
+        return;
+      }
+      try {
+        var respostas = '1. O que sabe fazer bem: '+answers.q1+
+          '\n2. Sobre o que poderia ensinar: '+answers.q2+
+          '\n3. Quem gostaria de ajudar: '+answers.q3+
+          '\n4. Resultado desejado: '+(answers.q4||'')+
+          '\n5. Pessoas já perguntam: '+(answers.q5||'');
+        var prompt = contextPromptBlock() + `\n\nCom base nas respostas abaixo, gere até 3 OPORTUNIDADES de Produto Mínimo (ainda não é o produto final).
+
+RESPOSTAS DO USUARIO:
+`+respostas+`
+
+## Criterios de filtro (aplicar antes de apresentar)
+Descarte opcoes que: ensinem "tudo"; exijam lancamento/funil/audiencia grande; prometam escala ou faturamento; resolvam mais de um problema; dependam de ferramentas complexas.
+Priorize: conhecimento que a pessoa JA tem; resultado tangivel em poucos dias; vendavel no link da bio.
+
+## Para cada opcao traga
+- Nome provisorio
+- Problema resolvido (uma frase)
+- Transformacao (de → para)
+- Por que PODE fazer sentido (hipótese, não demanda comprovada)
+- Scores 0–10 (Avaliação estratégica da IA): Desejo, Clareza, Facilidade, Potencial
+
+## Ao final
+Indique qual recomenda e por que (2–3 frases).
+
+IMPORTANTE: ao final da resposta, inclua um bloco JSON assim:
+\`\`\`json
+{
+  "recommendation": "texto",
+  "items": [
+    {
+      "nome": "...",
+      "problema": "...",
+      "transformacao": "...",
+      "demanda": "...",
+      "scores": {"desejo": 8, "clareza": 8, "facilidade": 8, "potencial": 8},
+      "recommended": true
+    }
+  ]
+}
+\`\`\`
+Exatamente 3 items. Apenas um com recommended true. Scores inteiros 0-10.`;
+        var text = await callGemini(prompt);
+        var parsed = extractJSON(text);
+        if (parsed && parsed.items && parsed.items.length) {
+          stageState[1].options = {
+            recommendation: parsed.recommendation || 'Recomendação da IA com base nas suas respostas.',
+            items: parsed.items.slice(0,3).map(function(it, idx){
+              return {
+                nome: it.nome || ('Opção '+(idx+1)),
+                problema: it.problema || '',
+                transformacao: it.transformacao || '',
+                demanda: it.demanda || '',
+                scores: {
+                  desejo: (it.scores && it.scores.desejo) || 7,
+                  clareza: (it.scores && it.scores.clareza) || 7,
+                  facilidade: (it.scores && it.scores.facilidade) || 7,
+                  potencial: (it.scores && it.scores.potencial) || 7
+                },
+                recommended: !!it.recommended
+              };
+            })
+          };
+          // ensure one recommended
+          if (!stageState[1].options.items.some(function(x){return x.recommended;})) {
+            stageState[1].options.items[0].recommended = true;
+          }
+        } else {
+          // fallback: show text as single recommendation path using simulated structure
+          stageState[1].options = generateIdeiaOptions(answers);
+          stageState[1].options.recommendation = (text || '').substring(0, 400) || stageState[1].options.recommendation;
+        }
+        stageState[1].step = 'options';
+        renderStage();
+      } catch (e) {
+        console.error(e);
+        alert('Erro na IA: ' + e.message + '\nUsando modo simulado.');
+        stageState[1].options = generateIdeiaOptions(answers);
+        stageState[1].step = 'options';
+        renderStage();
+      }
+    }
+
+    function generateIdeiaOptions(a) {
+      var tema = a.q2 || a.q1 || 'seu conhecimento';
+      var publico = a.q3 || 'pessoas interessadas';
+      var resultado = a.q4 || 'resultados práticos';
+      return {
+        recommendation: 'A Opção 1 tem o melhor equilíbrio entre desejo, clareza e facilidade de execução para um Produto Mínimo de entrada.',
+        items: [
+          { nome: 'Método ' + resultado.split(' ').slice(0,3).join(' ') + ' em 21 dias', problema: 'Pessoas do público "'+publico+'" não conseguem '+resultado.toLowerCase()+' de forma clara e estruturada.', transformacao: 'De alguém confuso e sem direção → para alguém que já aplica o método e vê os primeiros resultados.', demanda: 'Você mencionou que pessoas já fazem perguntas sobre isso. Sinal claro de demanda.', scores: { desejo: 9, clareza: 8, facilidade: 8, potencial: 9 }, recommended: true },
+          { nome: 'Guia prático: ' + tema, problema: 'Falta de um caminho simples para quem quer aprender '+tema.toLowerCase()+'.', transformacao: 'De iniciante perdido → para alguém com um plano claro e ações concretas.', demanda: 'Conteúdo prático sobre '+tema.toLowerCase()+' gera interesse constante.', scores: { desejo: 7, clareza: 7, facilidade: 9, potencial: 7 }, recommended: false },
+          { nome: 'Mentoria express: primeiros resultados com ' + tema, problema: 'Pessoas querem resultados rápidos mas se perdem em conteúdos longos.', transformacao: 'De sobrecarregado de informação → para focado e executando o essencial.', demanda: 'Formato mais premium. Permite precificar melhor.', scores: { desejo: 8, clareza: 6, facilidade: 5, potencial: 8 }, recommended: false }
+        ]
+      };
+    }
+
+    function selectIdeia(i) { stageState[1].selected = i; renderStage(); }
+
+    function confirmIdeia() {
+      var opt = stageState[1].options.items[stageState[1].selected];
+      product.data.nome = opt.nome;
+      product.name = opt.nome;
+      product.data.problema = opt.problema;
+      product.data.transformacao = opt.transformacao || product.data.transformacao;
+      product.data.ideiaEscolhida = opt;
+      product.data.oportunidade = opt.nome + (opt.problema ? ' — ' + opt.problema : '');
+      setOfficialDecision('oportunidade', product.data.oportunidade);
+      setOfficialDecision('produto', opt.nome);
+      if (opt.problema) setOfficialHypothesis('dor', opt.problema); // hipótese até etapa Dor aprovar
+      if (opt.transformacao) setOfficialHypothesis('transformacao', opt.transformacao);
+      stageState[1].step = 'done';
+      completeStage(1);
+      if (typeof updateProductPanel === 'function') updateProductPanel();
+      if (typeof updateSummary === 'function') updateSummary();
+      renderStage();
+    }
+
+    // STAGE 2
+    function renderStage2(container, st) {
+      if (st.step === 'questions') {
+        container.innerHTML = '<div class="stage-panel active"><div class="stage-header"><h2>Agora vamos descobrir quem compraria isso.</h2><p>Quanto mais específico o público, mais fácil vender. Você pode responder as perguntas ou pedir uma sugestão da IA.</p></div><div class="actions" style="margin-top:0;margin-bottom:20px"><button class="btn btn-ai" onclick="sugerirPublicoIA()">✨ Sugerir público pela IA</button></div>' +
+          [['p1','Quem você imagina comprando esse produto?'],['p2','O que essa pessoa está tentando conseguir?'],['p3','Qual é o maior problema dela hoje?'],['p4','O que ela já tentou fazer?'],['p5','O que mais frustra essa pessoa?'],['p6','O que ela gostaria de conseguir rapidamente?'],['p7','Por que ela compraria uma solução como essa?']].map(function(q,i){
+            return '<div class="question-block"><div class="question-label"><span class="q-num">'+(i+1)+'</span> '+q[1]+'</div><textarea id="'+q[0]+'" placeholder="Seja específico...">'+(st.answers[q[0]]||'')+'</textarea></div>';
+          }).join('') +
+          '<div class="actions">'+backBtn(1)+'<button class="btn btn-primary" onclick="analyzePublico()">Gerar perfil do público →</button></div></div>';
+      } else if (st.step === 'loading') {
+        container.innerHTML = '<div class="stage-panel active"><div class="loading"><div class="spinner"></div><p>Construindo o perfil do público...</p></div></div>';
+      } else if (st.step === 'profile') {
+        var p = st.profile;
+        var fields = {'Quem é':'quem','Momento atual':'momento','Problema':'problema','Desejo':'desejo','Medos':'medos','Objeções':'objecoes','O que já tentou':'tentou','O que procura':'procura','O que faria comprar':'compra','Linguagem':'linguagem'};
+        container.innerHTML = '<div class="stage-panel active"><div class="stage-header"><h2>Seu Público</h2><p>Perfil estruturado. Edite qualquer campo antes de aprovar.</p></div><div class="ai-result"><h3>Perfil estruturado</h3><div class="profile-grid">' +
+          Object.keys(fields).map(function(label){
+            var key = fields[label];
+            var full = ['quem','momento','problema','desejo'].indexOf(key) < 0 ? ' full' : '';
+            return '<div class="profile-item'+full+'"><label>'+label+'</label><textarea id="pub-'+key+'" style="min-height:48px">'+p[key]+'</textarea></div>';
+          }).join('') +
+          '</div></div><div class="ai-result"><h3>Potencial do Público</h3><div class="potential-scores"><div class="potential-item"><div class="score '+scoreClass(p.scores.dor)+'">'+p.scores.dor+'/10</div><div class="label">Dor</div></div><div class="potential-item"><div class="score '+scoreClass(p.scores.desejo)+'">'+p.scores.desejo+'/10</div><div class="label">Desejo</div></div><div class="potential-item"><div class="score '+scoreClass(p.scores.clareza)+'">'+p.scores.clareza+'/10</div><div class="label">Clareza</div></div><div class="potential-item"><div class="score '+scoreClass(p.scores.intencao)+'">'+p.scores.intencao+'/10</div><div class="label">Intenção</div></div></div><p style="font-size:13px;color:var(--text-secondary);line-height:1.6">'+p.explicacao+'</p></div><div class="actions">'+backBtn(2,'questions')+'<button class="btn btn-success" onclick="approvePublico()">Aprovar Público</button></div></div>';
+      } else if (st.step === 'done') {
+        container.innerHTML = '<div class="stage-panel active"><div class="success-banner">✓ Etapa 02 concluída — Público definido</div><div class="ai-result"><h3>Público aprovado</h3><p style="font-size:13px;color:var(--text-secondary)">'+product.data.publico+'</p></div><div class="actions">'+backBtn(2,'profile')+'<button class="btn btn-secondary" onclick="stageState[2].step=\'questions\';renderStage()">✏️ Editar</button><button class="btn btn-primary" onclick="goToStage(3)">Continuar para Problema →</button></div></div>';
+      }
+    }
+
+    function sugerirPublicoIA() {
+      var d = product.data;
+      if (!hasRealAI()) {
+        var sugestoes = {
+          p1: d.ideiaEscolhida ? 'Pessoas que precisam de ajuda com: '+(d.problema||'o tema do produto')+'. Geralmente profissionais ou iniciantes que já tentaram sozinhos e não conseguiram resultado claro.' : 'Pessoas que têm o problema que seu produto resolve e buscam um caminho prático e rápido.',
+          p2: d.transformacao || 'Alcançar o resultado prometido de forma clara e sem enrolação.',
+          p3: d.problema || 'Não conseguir avançar sozinho, apesar de já ter tentado conteúdos e métodos genéricos.',
+          p4: 'Vídeos grátis no YouTube, posts no Instagram, tentativas sozinho, possivelmente algum curso genérico que não aplicou.',
+          p5: 'Perder tempo com conteúdo que não leva a resultado, sentir que está sempre começando e nunca terminando.',
+          p6: 'Ter um caminho claro e ver os primeiros resultados em poucos dias, sem precisar de horas por dia.',
+          p7: 'Porque o preço é acessível, a promessa é específica e ela reconhece a dor. Compra quase no impulso quando vê que resolve o problema dela.'
+        };
+        Object.keys(sugestoes).forEach(function(k){
+          var el = document.getElementById(k);
+          if (el) el.value = sugestoes[k];
+        });
+        stageState[2].answers = sugestoes;
+        alert('Sugestão simulada preenchida. Configure a IA para sugestões reais.');
+        return;
+      }
+      // Real AI
+      var btn = event && event.target;
+      if (btn) btn.disabled = true;
+      callGemini(contextPromptBlock() + `\n\nSugira respostas para o perfil de público (marque como Hipótese da IA — confirmar qualquer dado não informado pelo usuário).\nNão invente renda, idade, CLT ou localização.\n\nProduto/ideia: `+(d.nome||'')+`
+Problema: `+(d.problema||'')+`
+Transformação: `+(d.transformacao||'')+`
+
+Preencha de forma específica (não genérica):
+p1 = Quem imagina comprando
+p2 = O que essa pessoa está tentando conseguir
+p3 = Maior problema dela hoje
+p4 = O que ela já tentou
+p5 = O que mais frustra
+p6 = O que gostaria de conseguir rapidamente
+p7 = Por que compraria uma solução como essa
+
+Responda APENAS com JSON:
+\`\`\`json
+{"p1":"...","p2":"...","p3":"...","p4":"...","p5":"...","p6":"...","p7":"..."}
+\`\`\``).then(function(text){
+        if (btn) btn.disabled = false;
+        var parsed = extractJSON(text);
+        if (!parsed) { alert('IA respondeu, mas não no formato esperado. Tente de novo.'); return; }
+        ['p1','p2','p3','p4','p5','p6','p7'].forEach(function(k){
+          var el = document.getElementById(k);
+          if (el && parsed[k]) el.value = parsed[k];
+        });
+        stageState[2].answers = parsed;
+        alert('Público sugerido pela IA. Revise e gere o perfil.');
+      }).catch(function(e){
+        if (btn) btn.disabled = false;
+        alert('Erro na IA: '+e.message);
+      });
+    }
+
+    function analyzePublico() {
+      var keys = ['p1','p2','p3','p4','p5','p6','p7'];
+      var answers = {};
+      keys.forEach(function(k){ answers[k] = document.getElementById(k).value.trim(); });
+      if (!answers.p1 || !answers.p3) { alert('Preencha pelo menos "Quem compra" e "Maior problema".'); return; }
+      stageState[2].answers = answers;
+      stageState[2].step = 'loading';
+      renderStage();
+      runPublicoAI(answers);
+    }
+
+    async function runPublicoAI(answers) {
+      function localProfile() {
+        return {
+          quem: answers.p1,
+          momento: answers.p2 ? 'Está tentando '+answers.p2.toLowerCase() : 'Em busca de solução',
+          problema: answers.p3,
+          desejo: answers.p6 || answers.p2 || 'Resultado rápido e claro',
+          medos: answers.p5 || 'Desperdiçar tempo e dinheiro sem resultado',
+          objecoes: 'Já vi muita coisa parecida / Não sei se funciona pra mim / Será que vale o preço?',
+          tentou: answers.p4 || 'Conteúdos gratuitos e tentativas sozinho',
+          procura: 'Caminho claro, prático, resultado sem enrolação',
+          compra: answers.p7 || 'Quer o resultado de forma mais rápida e com menos erros',
+          linguagem: '"Eu não consigo '+(answers.p3||'avançar').toLowerCase()+'. Já tentei de tudo e nada funciona direito."',
+          scores: { dor: 8, desejo: 9, clareza: 7, intencao: 8 },
+          explicacao: 'Público com dor clara e desejo alto. Ideal para Produto Mínimo de entrada.'
+        };
+      }
+      if (!hasRealAI()) {
+        setTimeout(function(){
+          stageState[2].profile = localProfile();
+          stageState[2].step = 'profile';
+          renderStage();
+        }, 1000);
+        return;
+      }
+      try {
+        var d = product.data;
+        var prompt = contextPromptBlock() + `\n\nMonte o perfil. Dados não informados = Hipótese da IA — confirmar. Não invente renda/idade/CLT.\n\nProduto/ideia: `+(d.nome||'')+`\nProblema: `+(d.problema||'')+`\nTransformacao: `+(d.transformacao||'')+`\n\nRespostas sobre o publico:
+1. `+answers.p1+`
+2. `+answers.p2+`
+3. `+answers.p3+`
+4. `+answers.p4+`
+5. `+answers.p5+`
+6. `+answers.p6+`
+7. `+answers.p7+`
+
+Monte o perfil estruturado do publico para Produto Minimo de entrada (R$27-97).
+
+Responda APENAS com JSON:
+\`\`\`json
+{
+  "quem": "...",
+  "momento": "...",
+  "problema": "...",
+  "desejo": "...",
+  "medos": "...",
+  "objecoes": "...",
+  "tentou": "...",
+  "procura": "...",
+  "compra": "...",
+  "linguagem": "frase coloquial entre aspas",
+  "scores": {"dor": 8, "desejo": 8, "clareza": 8, "intencao": 8},
+  "explicacao": "2 frases"
+}
+\`\`\``;
+        var text = await callGemini(prompt);
+        var parsed = extractJSON(text);
+        if (parsed && parsed.quem) {
+          stageState[2].profile = {
+            quem: parsed.quem,
+            momento: parsed.momento || '',
+            problema: parsed.problema || answers.p3,
+            desejo: parsed.desejo || '',
+            medos: parsed.medos || '',
+            objecoes: parsed.objecoes || '',
+            tentou: parsed.tentou || '',
+            procura: parsed.procura || '',
+            compra: parsed.compra || '',
+            linguagem: parsed.linguagem || '',
+            scores: parsed.scores || { dor: 7, desejo: 7, clareza: 7, intencao: 7 },
+            explicacao: parsed.explicacao || ''
+          };
+        } else {
+          stageState[2].profile = localProfile();
+        }
+        stageState[2].step = 'profile';
+        renderStage();
+      } catch (e) {
+        console.error(e);
+        alert('Erro na IA: '+e.message);
+        stageState[2].profile = localProfile();
+        stageState[2].step = 'profile';
+        renderStage();
+      }
+    }
+
+    function approvePublico() {
+      var p = stageState[2].profile;
+      ['quem','momento','problema','desejo','medos','objecoes','tentou','procura','compra','linguagem'].forEach(function(k){
+        var el = document.getElementById('pub-'+k);
+        if (el) p[k] = el.value.trim();
+      });
+      product.data.publico = p.quem;
+      product.data.publicoDetalhado = p;
+      setOfficialDecision('publico', p.quem);
+      stageState[2].step = 'done';
+      completeStage(2);
+      updateProductPanel();
+      renderStage();
+    }
+
+    // STAGE 3
+    function renderStage3(container, st) {
+      if (st.step === 'options' && !st.options) {
+        container.innerHTML = '<div class="stage-panel active"><div class="loading"><div class="spinner"></div><p>Mapeando dores específicas deste público...</p></div></div>';
+        runDorAI();
+        return;
+      }
+      if (st.step === 'options' && st.options) {
+        var items = st.options.items || [];
+        var rec = st.options.recommendation || '';
+        var html3 = '<div class="stage-panel active"><div class="stage-header"><h2>Etapa 3 — Dor principal</h2><p>Um Produto Mínimo resolve <strong>UMA</strong> dor. As outras ficam de fora deste produto.</p></div>';
+        if (rec) html3 += '<div class="info-banner">' + rec + '</div>';
+        items.forEach(function(it, i) {
+          var sel = st.selected === i;
+          html3 += '<div class="option-card '+(sel?'selected':'')+'" onclick="stageState[3].selected='+i+';renderStage()">';
+          html3 += '<div class="option-title">'+(it.dor||it.principal||'Dor')+(it.recommended?' · recomendada':'')+'</div>';
+          html3 += '<div style="font-size:13px;color:var(--text-secondary);margin:8px 0">'+(it.cotidiano||it.explicacao||'')+'</div>';
+          if (it.scores) {
+            html3 += '<div class="potential-scores">';
+            ['urgencia','desejo','relevancia','facilidadeEntrega'].forEach(function(k){
+              if (it.scores[k] != null) html3 += '<div class="potential-item"><div class="score '+scoreClass(it.scores[k])+'">'+it.scores[k]+'/10</div><div class="label">'+k+'</div></div>';
+            });
+            html3 += '</div>';
+          }
+          html3 += '</div>';
+        });
+        html3 += '<div class="actions">'+backBtn(2)+'<button class="btn btn-primary" '+(st.selected==null?'disabled':'')+' onclick="approveDor()">Aprovar esta dor →</button></div></div>';
+        container.innerHTML = html3;
+        return;
+      }
+      if (st.step === 'result' || st.step === 'done') {
+        var p = st.problem || {};
+        var discarded = product.data.doresDescartadas || st.discarded || [];
+        container.innerHTML = '<div class="stage-panel active"><div class="success-banner">✓ Dor principal definida</div><div class="stage-header"><h2>PROBLEMA PRINCIPAL</h2></div><div class="ai-result"><div class="value" style="font-size:15px">'+(product.data.problema||p.principal||'')+'</div></div><div class="ai-result"><h3>Problemas que NÃO serão resolvidos neste produto</h3><ul style="padding-left:18px;color:var(--text-secondary);font-size:13px;line-height:1.7">'+(discarded.length?discarded.map(function(s){return '<li>'+s+'</li>';}).join(''):'<li>Nenhum listado</li>')+'</ul></div><div class="actions">'+backBtn(3,'options')+'<button class="btn btn-primary" onclick="completeStage(3);goToStage(4)">Continuar →</button></div></div>';
+      }
+    }
+
+    async function runDorAI() {
+      if (!hasRealAI()) {
+        alert('Não foi possível gerar as 5 dores automaticamente. Configure a IA e tente novamente.');
+        stageState[3].options = null;
+        stageState[3].step = 'options';
+        renderStage();
+        return;
+      }
+      async function attempt() {
+        var prompt = contextPromptBlock() + `
+
+Gere EXATAMENTE 5 DORES específicas deste público (não menos).
+Cada dor deve ser distinta. Scores = Avaliação estratégica da IA (NÃO validação de mercado).
+Não invente faixa de renda, CLT, idade ou dados demográficos não informados.
+Não diga que há demanda comprovada. Não há pesquisa externa nesta etapa.
+
+JSON estrito:
+\`\`\`json
+{
+  "recommendation": "qual dor escolher e por que (como hipótese de recomendação)",
+  "items": [
+    {
+      "dor": "...",
+      "cotidiano": "como aparece no dia a dia",
+      "porqueIncomoda": "...",
+      "scores": {"urgencia": 8, "desejo": 8, "relevancia": 8, "facilidadeEntrega": 8},
+      "recommended": false
+    }
+  ]
+}
+\`\`\`
+O array items DEVE ter exatamente 5 elementos. Apenas um recommended true.`;
+        var text = await callGemini(prompt);
+        var parsed = extractJSON(text);
+        if (parsed && parsed.items && parsed.items.length >= 5) {
+          return {
+            recommendation: (parsed.recommendation || '') + ' (Avaliação estratégica da IA — não é validação de mercado.)',
+            items: parsed.items.slice(0, 5)
+          };
+        }
+        return null;
+      }
+      try {
+        var result = await attempt();
+        if (!result) {
+          result = await attempt(); // uma retentativa
+        }
+        if (!result) {
+          alert('A IA não retornou 5 dores válidas. Tente novamente.');
+          stageState[3].options = null;
+          renderStage();
+          return;
+        }
+        stageState[3].options = result;
+        renderStage();
+      } catch (e) {
+        alert('Não foi possível gerar esta etapa automaticamente. ' + (e.message||e));
+        stageState[3].options = null;
+        renderStage();
+      }
+    }
+
+    function approveDor() {
+      var st = stageState[3];
+      if (st.selected == null) return;
+      var item = st.options.items[st.selected];
+      var discarded = [];
+      st.options.items.forEach(function(it, i) {
+        if (i !== st.selected) discarded.push(it.dor || it.principal || '');
+      });
+      product.data.problema = item.dor || item.principal || '';
+      product.data.doresDescartadas = discarded.filter(Boolean);
+      product.data.problemaDetalhado = item;
+      setOfficialDecision('dor', product.data.problema);
+      st.problem = { principal: product.data.problema, secundarios: discarded };
+      st.discarded = discarded;
+      st.step = 'result';
+      completeStage(3);
+      renderStage();
+      updateSummary();
+    }
+
+    function renderStage4(container, st) {
+      if (st.step === 'options' && !st.options) {
+        container.innerHTML = '<div class="stage-panel active"><div class="loading"><div class="spinner"></div><p>Criando opções de transformação (ANTES → DEPOIS)...</p></div></div>';
+        runPromessaAI();
+        return;
+      }
+      if (st.step === 'options') {
+        var opts = st.options;
+        container.innerHTML = '<div class="stage-panel active"><div class="stage-header"><h2>Transforme o problema em uma promessa.</h2><p>Máximo 3 opções. Específica, desejável e crível.</p></div><div class="info-banner"><strong>Recomendação:</strong> '+opts.recommendation+'</div>' +
+          opts.items.map(function(o,i){
+            return '<div class="option-card '+(o.recommended?'recommended':'')+' '+(st.selected===i?'selected':'')+'" onclick="selectPromessa('+i+')"><div class="option-title">PROMESSA '+(i+1)+'</div><p style="font-size:15px;font-weight:500;margin-bottom:12px;line-height:1.5">"'+o.texto+'"</p><div class="scores"><div class="score-item"><div class="label">Desejo</div><div class="value '+scoreClass(o.scores.desejo)+'">'+o.scores.desejo+'/10</div></div><div class="score-item"><div class="label">Clareza</div><div class="value '+scoreClass(o.scores.clareza)+'">'+o.scores.clareza+'/10</div></div><div class="score-item"><div class="label">Especificidade</div><div class="value '+scoreClass(o.scores.especificidade)+'">'+o.scores.especificidade+'/10</div></div><div class="score-item"><div class="label">Credibilidade</div><div class="value '+scoreClass(o.scores.credibilidade)+'">'+o.scores.credibilidade+'/10</div></div></div><p style="font-size:12px;color:var(--text-muted);margin-top:10px">'+o.explicacao+'</p></div>';
+          }).join('') +
+          '<div class="actions">'+backBtn(3)+'<button class="btn btn-primary" id="btn-escolher-promessa" '+(st.selected===null?'disabled':'')+' onclick="confirmPromessa()">Escolher esta promessa</button></div></div>';
+      } else if (st.step === 'done') {
+        var txtDone = (product.data.transformacao || '').trim();
+        if (!txtDone) {
+          container.innerHTML = '<div class="stage-panel active"><div class="warning-banner">Transformação não foi salva (valor vazio). Volte e escolha novamente.</div><div class="actions">'+backBtn(4,'options')+'</div></div>';
+        } else {
+          container.innerHTML = '<div class="stage-panel active"><div class="success-banner">✓ TRANSFORMAÇÃO DEFINIDA</div><div class="ai-result"><h3>Transformação <span style="font-size:11px;color:var(--text-muted)">[DECISÃO APROVADA]</span></h3><p style="font-size:15px;font-weight:500;line-height:1.5">"'+txtDone.replace(/"/g,'&quot;')+'"</p></div><div class="actions">'+backBtn(4,'options')+'<button class="btn btn-primary" onclick="goToStage(5)">Continuar para Produto →</button></div></div>';
+        }
+      }
+    }
+
+    function generatePromessas() {
+      var t = product.data.transformacao ? product.data.transformacao.toLowerCase().replace('de alguém','').replace('→','').trim() : 'alcançar seus primeiros resultados';
+      return {
+        recommendation: 'A Promessa 1 combina especificidade, desejo e credibilidade. Ideal para produto de entrada.',
+        items: [
+          { texto: 'Aprenda o método prático para '+t+' sem enrolação.', scores: { desejo: 9, clareza: 8, especificidade: 8, credibilidade: 8 }, explicacao: 'Direta e orientada a resultado. Boa para página simples e anúncios.', recommended: true },
+          { texto: 'Do zero aos primeiros resultados com um passo a passo claro e aplicável em poucos dias.', scores: { desejo: 8, clareza: 9, especificidade: 7, credibilidade: 7 }, explicacao: 'Muito clara. Funciona bem para iniciantes.', recommended: false },
+          { texto: 'Pare de se perder em conteúdos infinitos. Siga um caminho único e veja progresso real.', scores: { desejo: 7, clareza: 7, especificidade: 6, credibilidade: 8 }, explicacao: 'Foca na dor da sobrecarga de informação.', recommended: false }
+        ]
+      };
+    }
+
+    
+    async function runPromessaAI() {
+      if (!hasRealAI()) {
+        setTimeout(function(){
+          stageState[4].options = generatePromessas();
+          renderStage();
+        }, 1000);
+        return;
+      }
+      try {
+        var d = product.data;
+        var pub = d.publicoDetalhado || {};
+        var prompt = contextPromptBlock() + `
+
+Gere no máximo 3 TRANSFORMAÇÕES possíveis (ANTES → DEPOIS) para Produto Mínimo.
+Pequenas o suficiente para entregar em 5–7 aulas. Específicas, desejáveis, críveis.
+
+Público: `+(d.publico||'')+`
+Dor: `+(d.problema||'')+`
+Desejo: `+(pub.desejo||'')+`
+
+JSON:
+\`\`\`json
+{
+  "recommendation": "qual escolher e por que",
+  "items": [
+    {
+      "texto": "De: ... → Para: ...",
+      "de": "...",
+      "para": "...",
+      "scores": {"desejo": 9, "clareza": 8, "especificidade": 8, "credibilidade": 8, "facilidade": 8},
+      "explicacao": "1-2 frases",
+      "recommended": true
+    }
+  ]
+}
+\`\`\`
+Até 3 items. Um recommended true.`;
+        var text = await callGemini(prompt);
+        var parsed = extractJSON(text);
+        if (parsed && parsed.items && parsed.items.length) {
+          stageState[4].options = {
+            recommendation: parsed.recommendation || '',
+            items: parsed.items.slice(0,3).map(function(it){
+              var t = (it.texto || '').trim();
+              if (!t && it.de && it.para) t = 'De: ' + it.de + ' → Para: ' + it.para;
+              if (!t && it.transformacao) t = String(it.transformacao);
+              return {
+                texto: t,
+                de: it.de || '',
+                para: it.para || '',
+                scores: it.scores || {desejo:7,clareza:7,especificidade:7,credibilidade:7},
+                explicacao: it.explicacao || '',
+                recommended: !!it.recommended
+              };
+            }).filter(function(it){ return it.texto && it.texto.trim(); })
+          };
+        } else {
+          stageState[4].options = generatePromessas();
+        }
+        renderStage();
+      } catch(e) {
+        console.error(e);
+        alert('Erro na IA: '+e.message);
+        stageState[4].options = generatePromessas();
+        renderStage();
+      }
+    }
+
+    function selectPromessa(i) { stageState[4].selected = i; renderStage(); }
+
+    function confirmPromessa() {
+      // Etapa 4 = TRANSFORMAÇÃO (não promessa)
+      var st = stageState[4];
+      if (st.selected == null || st.selected === undefined) {
+        alert('Selecione uma opção antes de continuar.');
+        return;
+      }
+      if (!st.options || !st.options.items || !st.options.items[st.selected]) {
+        alert('Nenhuma opção válida encontrada. Gere novamente.');
+        return;
+      }
+      var opt = st.options.items[st.selected];
+      var texto = (opt.texto != null ? String(opt.texto) : '').trim();
+      if (!texto && opt.de && opt.para) {
+        texto = ('De: ' + opt.de + ' → Para: ' + opt.para).trim();
+      }
+      if (!texto && opt.transformacao) {
+        texto = String(opt.transformacao).trim();
+      }
+      if (!texto) {
+        alert('Nenhuma transformação/promessa válida foi encontrada na opção selecionada. O texto está vazio. Gere novamente ou escolha outra opção.');
+        return;
+      }
+      // Persistir no campo correto da etapa 4
+      product.data.transformacao = texto;
+      setOfficialDecision('transformacao', texto);
+      // NÃO gravar em promessa aqui (etapa 6)
+      st.step = 'done';
+      st.selectedTransform = opt;
+      completeStage(4);
+      persistCurrent();
+      if (typeof updateProductPanel === 'function') updateProductPanel();
+      if (typeof updateSummary === 'function') updateSummary();
+      renderStage();
+    }
+
+    // STAGE 5
+    function renderStage5(container, st) {
+      // V2: first choose product packaging, then structure
+      if (st.step === 'options' && !st.options) {
+        container.innerHTML = '<div class="stage-panel active"><div class="loading"><div class="spinner"></div><p>Empacotando o Produto Mínimo...</p></div></div>';
+        runProdutoAI();
+        return;
+      }
+      if (st.step === 'options' && st.options) {
+        var items = st.options.items || [];
+        var h = '<div class="stage-panel active"><div class="stage-header"><h2>Etapa 5 — Produto Mínimo</h2><p>Três formas de empacotar a <strong>mesma</strong> transformação. Escolha UMA.</p></div>';
+        if (st.options.recommendation) h += '<div class="info-banner">'+st.options.recommendation+'</div>';
+        items.forEach(function(it,i){
+          h += '<div class="option-card '+(st.selected===i?'selected':'')+'" onclick="stageState[5].selected='+i+';renderStage()">';
+          h += '<div class="option-title">'+(it.nome||'Opção')+(it.recommended?' · recomendada':'')+'</div>';
+          h += '<div style="font-size:13px;color:var(--text-secondary);margin:8px 0">'+(it.formato||'')+' — '+(it.aulas||'5-7')+' aulas</div>';
+          h += '<div style="font-size:12px;color:var(--text-muted)">'+(it.entregavel||it.descricao||'')+'</div>';
+          h += '</div>';
+        });
+        h += '<div class="actions">'+backBtn(4)+'<button class="btn btn-primary" '+(st.selected==null?'disabled':'')+' onclick="approveProduto()">Aprovar produto →</button></div></div>';
+        container.innerHTML = h;
+        return;
+      }
+      if (st.step === 'structure' && !st.aulas) {
+        container.innerHTML = '<div class="stage-panel active"><div class="loading"><div class="spinner"></div><p>Desenhando a estrutura com a quantidade oficial de aulas...</p></div></div>';
+        runEstruturaAI();
+        return;
+      }
+      if (st.step === 'structure') {
+        var qtdOficial = getOfficialQtdAulas();
+        var n = (st.aulas || []).length;
+        var okCount = qtdOficial ? (n === qtdOficial) : true;
+        var statusHtml = '';
+        if (qtdOficial) {
+          if (okCount) {
+            statusHtml = '<div class="success-banner">✓ Estrutura compatível com o produto (' + qtdOficial + ' aulas)</div>';
+          } else {
+            var diff = qtdOficial - n;
+            statusHtml = '<div class="warning-banner">⚠ Estrutura incompatível: produto aprovado com <strong>' + qtdOficial + ' aulas</strong>, estrutura tem <strong>' + n + '</strong>.' +
+              (diff > 0 ? ' Faltam ' + diff + ' aula(s).' : ' Há ' + Math.abs(diff) + ' aula(s) a mais.') + '</div>';
+          }
+        }
+        var h = '<div class="stage-panel active"><div class="stage-header"><h2>Revise sua estrutura antes de aprovar.</h2>';
+        if (qtdOficial) {
+          h += '<p>Seu produto foi definido com <strong>' + qtdOficial + ' aulas</strong>. A estrutura precisa conter <strong>exatamente ' + qtdOficial + '</strong>.</p>';
+        } else {
+          h += '<p>Revise as aulas. Cada uma deve ter função clara até a transformação.</p>';
+        }
+        h += '</div>' + statusHtml;
+        h += (st.aulas || []).map(function(a,i){
+          return '<div class="lesson-card"><div class="lesson-num">'+(i+1)+'</div><div class="lesson-content"><h4>'+escHtml(a.nome)+'</h4><p><strong>Objetivo:</strong> '+escHtml(a.objetivo)+'</p><p><strong>O aluno vai conseguir:</strong> '+escHtml(a.resultado)+'</p>'+(a.exercicio?'<p class="meta">📝 Exercício: '+escHtml(a.exercicio)+'</p>':'')+
+            '<div style="margin-top:8px;display:flex;gap:8px;flex-wrap:wrap">'+
+            '<button class="btn btn-ghost" style="padding:6px 10px;font-size:12px" onclick="editAulaEstrutura('+i+')">✎ Editar</button>'+
+            '<button class="btn btn-ghost" style="padding:6px 10px;font-size:12px" onclick="removeAulaEstrutura('+i+')">✕ Excluir</button>'+
+            '<button class="btn-roteiro" onclick="gerarRoteiro('+i+')">🎬 Gerar roteiro</button></div></div></div>';
+        }).join('');
+        h += '<div class="actions" style="flex-wrap:wrap;gap:8px">';
+        h += backBtn(4);
+        h += '<button class="btn btn-secondary" onclick="addAulaEstrutura()">+ Adicionar aula</button>';
+        if (qtdOficial) {
+          h += '<button class="btn btn-secondary" onclick="regenerarEstruturaExata()">Gerar novamente com ' + qtdOficial + ' aulas</button>';
+        } else {
+          h += '<button class="btn btn-secondary" onclick="stageState[5].aulas=null;renderStage()">Gerar novamente</button>';
+        }
+        if (qtdOficial && n !== qtdOficial) {
+          h += '<button class="btn btn-ghost" onclick="alterarQtdOficialParaEstrutura()">Alterar produto para ' + n + ' aulas…</button>';
+        }
+        h += '<button class="btn btn-success" ' + (okCount ? '' : 'disabled title="Ajuste a quantidade de aulas antes de aprovar"') + ' onclick="approveEstrutura()">Aprovar Estrutura</button>';
+        h += '</div></div>';
+        container.innerHTML = h;
+      } else if (st.step === 'done') {
+        container.innerHTML = '<div class="stage-panel active"><div class="success-banner">✓ Etapa 05 concluída — Estrutura aprovada</div><div class="ai-result"><h3>Estrutura</h3><p style="font-size:13px;color:var(--text-secondary)">'+escHtml(product.data.estrutura||'')+'</p></div><div class="actions">'+backBtn(5,'structure')+'<button class="btn btn-primary" onclick="goToStage(6)">Continuar →</button></div></div>';
+      }
+    }
+
+    function escHtml(s) {
+      return String(s == null ? '' : s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    }
+
+    function getOfficialQtdAulas() {
+      var q = null;
+      if (typeof isApproved === 'function' && isApproved('qtdAulas')) {
+        q = parseInt(getOfficial('qtdAulas').value, 10);
+      }
+      if (!q && stageState[5] && stageState[5].approvedQtdAulas) q = stageState[5].approvedQtdAulas;
+      if (!q && product && product.data && product.data.official && product.data.official.qtdAulas && product.data.official.qtdAulas.value) {
+        q = parseInt(product.data.official.qtdAulas.value, 10);
+      }
+      return q && !isNaN(q) ? q : null;
+    }
+
+    function addAulaEstrutura() {
+      var nome = prompt('Título da nova aula:');
+      if (nome == null) return;
+      nome = String(nome).trim();
+      if (!nome) { alert('Informe um título.'); return; }
+      var objetivo = prompt('Objetivo da aula:') || '';
+      var resultado = prompt('O aluno vai conseguir:') || '';
+      var exercicio = prompt('Exercício (opcional):') || '';
+      if (!stageState[5].aulas) stageState[5].aulas = [];
+      stageState[5].aulas.push({
+        nome: nome,
+        objetivo: String(objetivo).trim(),
+        resultado: String(resultado).trim(),
+        exercicio: String(exercicio).trim() || null
+      });
+      persistCurrent();
+      renderStage();
+    }
+
+    function editAulaEstrutura(idx) {
+      var a = stageState[5].aulas[idx];
+      if (!a) return;
+      var nome = prompt('Título da aula:', a.nome);
+      if (nome == null) return;
+      var objetivo = prompt('Objetivo:', a.objetivo || '');
+      if (objetivo == null) return;
+      var resultado = prompt('O aluno vai conseguir:', a.resultado || '');
+      if (resultado == null) return;
+      var exercicio = prompt('Exercício (opcional):', a.exercicio || '');
+      if (exercicio == null) return;
+      stageState[5].aulas[idx] = {
+        nome: String(nome).trim() || a.nome,
+        objetivo: String(objetivo).trim(),
+        resultado: String(resultado).trim(),
+        exercicio: String(exercicio).trim() || null
+      };
+      persistCurrent();
+      renderStage();
+    }
+
+    function removeAulaEstrutura(idx) {
+      if (!confirm('Excluir a aula ' + (idx+1) + '?')) return;
+      stageState[5].aulas.splice(idx, 1);
+      persistCurrent();
+      renderStage();
+    }
+
+    function alterarQtdOficialParaEstrutura() {
+      var n = (stageState[5].aulas || []).length;
+      var qtdOficial = getOfficialQtdAulas();
+      if (!n) return;
+      var ok = confirm(
+        'Você está prestes a alterar uma decisão aprovada.\\n\\n' +
+        'Produto atual: ' + (qtdOficial || '?') + ' aulas\\n' +
+        'Nova decisão: ' + n + ' aulas\\n\\n' +
+        'Isso atualizará o contexto oficial do produto e afetará as próximas etapas.\\n\\n' +
+        'Deseja realmente alterar?'
+      );
+      if (!ok) return;
+      setOfficialDecision('qtdAulas', n);
+      stageState[5].approvedQtdAulas = n;
+      persistCurrent();
+      alert('Quantidade oficial atualizada para ' + n + ' aulas.');
+      renderStage();
+    }
+
+    function regenerarEstruturaExata() {
+      stageState[5].aulas = null;
+      stageState[5].forceExactAulas = getOfficialQtdAulas();
+      renderStage();
+    }
+
+
+    function generateEstrutura() {
+      return [
+        { nome: 'O mapa da transformação', objetivo: 'Mostrar onde o aluno está e para onde vai', resultado: 'Entender o caminho completo e se sentir orientado', exercicio: 'Escrever o ponto A e o ponto B desejado' },
+        { nome: 'O erro que a maioria comete', objetivo: 'Eliminar o principal bloqueio mental/comportamental', resultado: 'Parar de repetir o padrão que impede progresso', exercicio: null },
+        { nome: 'O fundamento essencial', objetivo: 'Ensinar o conceito ou habilidade base', resultado: 'Dominar a base necessária para tudo que vem depois', exercicio: 'Aplicar o fundamento em um exemplo real' },
+        { nome: 'O método passo a passo', objetivo: 'Entregar o processo central do produto', resultado: 'Saber exatamente o que fazer, na ordem certa', exercicio: 'Executar os primeiros 3 passos' },
+        { nome: 'Aplicação prática guiada', objetivo: 'Fazer o aluno aplicar', resultado: 'Ter a primeira versão ou o primeiro resultado', exercicio: 'Completar a aplicação e registrar o resultado' },
+        { nome: 'Ajustes e otimização', objetivo: 'Corrigir erros comuns e melhorar', resultado: 'Refinar o que foi feito', exercicio: null },
+        { nome: 'Próximo nível e manutenção', objetivo: 'Mostrar como continuar evoluindo', resultado: 'Sair com clareza do que fazer depois', exercicio: 'Definir o plano dos próximos 30 dias' }
+      ];
+    }
+
+    
+    
+    async function runProdutoAI() {
+      if (!hasRealAI()) {
+        setTimeout(function(){
+          var t = product.data.transformacao || 'a transformação definida';
+          stageState[5].options = {
+            recommendation: 'Escolha o empacotamento mais simples de validar.',
+            items: [
+              { nome: product.data.nome || 'Método prático', formato: 'Aulas curtas em vídeo', aulas: '6', entregavel: 'Caminho direto para: '+t, recommended: true },
+              { nome: (product.data.nome || 'Guia') + ' Express', formato: 'Mini-curso + checklist', aulas: '5', entregavel: 'Versão mais enxuta da mesma transformação', recommended: false },
+              { nome: 'Desafio 7 dias', formato: 'Desafio com tarefas diárias', aulas: '7', entregavel: 'Mesma transformação em formato de desafio', recommended: false }
+            ]
+          };
+          renderStage();
+        }, 800);
+        return;
+      }
+      try {
+        var prompt = contextPromptBlock() + `\n\nCrie até 3 formas de EMPACOTAR a mesma transformação em Produto Mínimo (não 3 produtos diferentes).\nPara cada: nome, formato, qtd aulas (5-7), o que entrega, potencial de validação.\nJSON:\n\`\`\`json\n{"recommendation":"...","items":[{"nome":"...","formato":"...","aulas":"6","entregavel":"...","recommended":true}]}\n\`\`\``;
+        var text = await callGemini(prompt);
+        var parsed = extractJSON(text);
+        if (parsed && parsed.items) stageState[5].options = parsed;
+        else stageState[5].options = { recommendation: '', items: [{ nome: product.data.nome || 'Produto Mínimo', formato: 'Aulas', aulas: '6', entregavel: product.data.transformacao||'', recommended: true }] };
+        renderStage();
+      } catch(e) {
+        alert('Erro: '+e.message);
+        stageState[5].options = { items: [{ nome: 'Produto Mínimo', formato: 'Aulas', aulas: '6', entregavel: '', recommended: true }] };
+        renderStage();
+      }
+    }
+
+    function approveProduto() {
+      var st = stageState[5];
+      if (st.selected == null) return;
+      var it = st.options.items[st.selected];
+      product.data.nome = it.nome || product.data.nome || 'Produto Mínimo';
+      product.name = product.data.nome;
+      product.data.oportunidade = product.data.oportunidade || product.data.nome;
+      setOfficialDecision('produto', product.data.nome);
+      setOfficialDecision('formato', it.formato || '');
+      var qa = parseInt(String(it.aulas || '').replace(/\D/g, ''), 10);
+      if (qa) setOfficialDecision('qtdAulas', qa);
+      st.approvedQtdAulas = qa || null;
+      st.step = 'structure';
+      st.aulas = null;
+      persistCurrent();
+      updateSummary();
+      renderStage();
+    }
+
+    async function runEstruturaAI() {
+      var qtdOficial = getOfficialQtdAulas() || stageState[5].forceExactAulas || null;
+      stageState[5].forceExactAulas = null;
+
+      if (!hasRealAI()) {
+        setTimeout(function(){
+          var base = generateEstrutura();
+          if (qtdOficial) {
+            while (base.length < qtdOficial) {
+              base.push({ nome: 'Aula ' + (base.length+1), objetivo: 'Complementar o caminho até a transformação', resultado: 'Avançar um passo no método', exercicio: null });
+            }
+            base = base.slice(0, qtdOficial);
+          }
+          stageState[5].aulas = base;
+          renderStage();
+        }, 600);
+        return;
+      }
+      try {
+        var d = product.data;
+        var qtdRule = qtdOficial
+          ? ('DECISÃO OFICIAL: quantidade EXATA de aulas = ' + qtdOficial + '.\nVocê DEVE gerar exatamente ' + qtdOficial + ' aulas.\nNão gere ' + (qtdOficial-1) + '. Não gere ' + (qtdOficial+1) + '.\nNão use "aproximadamente", "mínimo", "cerca de".\nNumere de 1 a ' + qtdOficial + '.')
+          : 'Gere entre 5 e 7 aulas (produto mínimo).';
+        var prompt = contextPromptBlock() + `\n\nCrie a estrutura do Produto Mínimo do PROBLEMA à TRANSFORMAÇÃO.\n\n` + qtdRule + `
+
+Produto: `+(d.nome||'')+`
+Promessa: `+(d.promessa||'')+`
+Problema: `+(d.problema||'')+`
+Transformacao: `+(d.transformacao||'')+`
+Publico: `+(d.publico||'')+`
+
+Regras: cada aula uma função; aula 1 com quick win; sem mindset genérico; sem enchimento.
+
+Responda APENAS com JSON:
+\`\`\`json
+{
+  "aulas": [
+    {
+      "nome": "...",
+      "objetivo": "...",
+      "resultado": "o que o aluno consegue FAZER",
+      "exercicio": "texto ou null"
+    }
+  ]
+}
+\`\`\``;
+        var text = await callGemini(prompt);
+        var parsed = extractJSON(text);
+        if (parsed && parsed.aulas && parsed.aulas.length) {
+          var aulas = parsed.aulas.map(function(a){
+            return {
+              nome: a.nome || 'Aula',
+              objetivo: a.objetivo || '',
+              resultado: a.resultado || '',
+              exercicio: a.exercicio || null
+            };
+          });
+          if (qtdOficial && aulas.length !== qtdOficial) {
+            alert('A IA gerou ' + aulas.length + ' aulas, mas o produto exige exatamente ' + qtdOficial + '.\n\nAjuste com "+ Adicionar aula", edite, ou use "Gerar novamente com ' + qtdOficial + ' aulas".\nA estrutura NÃO será aprovada até a quantidade bater.');
+          }
+          stageState[5].aulas = aulas;
+        } else {
+          alert('Não foi possível gerar a estrutura automaticamente. Tente novamente ou adicione aulas manualmente.');
+          stageState[5].aulas = [];
+        }
+        renderStage();
+      } catch(e) {
+        console.error(e);
+        alert('Não foi possível gerar a estrutura. ' + (e.message||e));
+        stageState[5].aulas = stageState[5].aulas || [];
+        renderStage();
+      }
+    }
+
+    function gerarRoteiro(idx) {
+      var aula = stageState[5].aulas[idx];
+      var d = product.data;
+      var tituloLimpo = String(aula.nome || '').replace(/^Aula\s*\d+\s*[:.\-–—]?\s*/i, '').trim() || aula.nome;
+      document.getElementById('roteiro-title').textContent = 'Roteiro — Aula ' + (idx+1) + ': ' + tituloLimpo;
+      document.getElementById('roteiro-content').innerHTML = '<div class="loading"><div class="spinner"></div><p>Gerando roteiro com IA...</p></div>';
+      document.getElementById('roteiro-modal').classList.add('open');
+      window._lastRoteiro = '';
+
+      function localRoteiro() {
+        return 'AULA ' + (idx+1) + ' — ' + tituloLimpo + '\n\n' +
+          'Duração sugerida: 8–15 minutos\n\n' +
+          'ABERTURA\n' +
+          'Olá. Nesta aula a gente resolve uma coisa bem objetiva: ' + (aula.objetivo || tituloLimpo) + '.\n' +
+          'No final você vai conseguir: ' + (aula.resultado || 'dar o próximo passo no método') + '.\n\n' +
+          'CONTEÚDO\n' +
+          '1) Por que isso importa agora (conecte com a dor: ' + (d.problema || 'o problema do aluno') + ').\n' +
+          '2) O passo principal desta aula — explique de forma simples.\n' +
+          '3) Como fazer na prática, em ordem.\n' +
+          '4) Erro comum e como evitar.\n\n' +
+          'EXERCÍCIO\n' + (aula.exercicio ? aula.exercicio : 'Aplique o passo principal agora, em menos de 10 minutos.') + '\n\n' +
+          'FECHAMENTO\n' +
+          'Recapitule o que mudou com esta aula. Diga o que vem na próxima. Peça uma ação imediata.';
+      }
+
+      if (!hasRealAI()) {
+        var r = localRoteiro();
+        window._lastRoteiro = r;
+        document.getElementById('roteiro-content').innerHTML = '<div class="roteiro-block" style="white-space:pre-line">' + r.replace(/</g,'&lt;') + '</div>';
+        return;
+      }
+
+      var prompt = contextPromptBlock() + `\n\nEscreva o ROTEIRO COMPLETO para gravar esta aula, em primeira pessoa, como FALA pronta (não outline genérico).\nNão invente depoimentos nem resultados. Não contradiga decisões aprovadas.\n\nProduto: ` + (d.nome || '') + `
+Promessa: ` + (d.promessa || '') + `
+Publico: ` + (d.publico || '') + `
+Problema: ` + (d.problema || '') + `
+
+Aula ` + (idx+1) + `: ` + tituloLimpo + `
+Objetivo: ` + (aula.objetivo || '') + `
+O aluno vai conseguir: ` + (aula.resultado || '') + `
+Exercicio: ` + (aula.exercicio || 'definir um exercicio pratico curto') + `
+
+REGRAS:
+- Texto para LER/FALAR na camera (primeira pessoa: "vou te mostrar", "faz assim").
+- NÃO use placeholders genéricos como "Contextualize o problema" ou "Entregue o passo principal".
+- Seja específico ao tema da aula (comida, potes, mercado, etc. conforme o título).
+- 8 a 15 minutos de fala.
+- Estrutura: Abertura 30-45s | Conteudo em passos numerados concretos | Exercicio claro | Fechamento 20-30s.
+- Indique [PAUSA] ou [MOSTRAR TELA] quando fizer sentido.
+- Nao invente depoimentos. Tom direto, conversa.`;
+
+      callGemini(prompt).then(function(text) {
+        window._lastRoteiro = text || localRoteiro();
+        var safe = String(window._lastRoteiro).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+        document.getElementById('roteiro-content').innerHTML = '<div class="roteiro-block" style="white-space:pre-line">' + safe + '</div>';
+      }).catch(function(e) {
+        var r = localRoteiro();
+        window._lastRoteiro = r;
+        document.getElementById('roteiro-content').innerHTML = '<div class="roteiro-block" style="white-space:pre-line">' + r.replace(/</g,'&lt;') + '</div>';
+        alert('Não foi possível gerar com IA (' + (e.message || e) + '). Mostrei um roteiro base — configure a IA e tente de novo.');
+      });
+    }
+
+    function copyRoteiro() {
+      navigator.clipboard.writeText(window._lastRoteiro || '').then(function(){ alert('Roteiro copiado!'); });
+    }
+
+    function approveEstrutura() {
+      var aulas = stageState[5].aulas;
+      if (!aulas || !aulas.length) { alert('Nenhuma estrutura para aprovar.'); return; }
+      var qtdOficial = getOfficialQtdAulas();
+      if (qtdOficial && aulas.length !== qtdOficial) {
+        alert(
+          'Não é possível aprovar.\n\n' +
+          'Seu produto foi definido com ' + qtdOficial + ' aulas, mas a estrutura tem ' + aulas.length + '.\n\n' +
+          'Use: + Adicionar aula | Gerar novamente com ' + qtdOficial + ' aulas | ou alterar o produto com confirmação explícita.'
+        );
+        return;
+      }
+      product.data.estrutura = aulas.length + ' aulas: ' + aulas.map(function(a){ return a.nome; }).join(' → ');
+      product.data.estruturaAulas = aulas;
+      setOfficialDecision('estrutura', product.data.estrutura);
+      setOfficialDecision('qtdAulas', aulas.length);
+      stageState[5].approvedQtdAulas = aulas.length;
+      stageState[5].step = 'done';
+      completeStage(5);
+      persistCurrent();
+      updateProductPanel();
+      renderStage();
+    }
+
+    // STAGE 6
+    function renderStage6(container, st) {
+      // V2: Promessa first if missing
+      if (!product.data.promessa && (st.step === 'oferta' || st.step === 'options')) {
+        if (st.step !== 'options') { st.step = 'options'; st.options = null; st.selected = null; }
+      }
+      if (st.step === 'options' && !st.options) {
+        container.innerHTML = '<div class="stage-panel active"><div class="loading"><div class="spinner"></div><p>Criando promessas alinhadas à transformação...</p></div></div>';
+        runPromessaStage6AI();
+        return;
+      }
+      if (st.step === 'options' && st.options) {
+        var items = st.options.items || [];
+        var h = '<div class="stage-panel active"><div class="stage-header"><h2>Etapa 6 — Promessa</h2><p>No máximo 3 promessas. Específica, desejada, crível e entregue pelo produto.</p></div>';
+        if (st.options.recommendation) h += '<div class="info-banner">'+st.options.recommendation+'</div>';
+        items.forEach(function(it,i){
+          h += '<div class="option-card '+(st.selected===i?'selected':'')+'" onclick="stageState[6].selected='+i+';renderStage()">';
+          h += '<div class="option-title">'+(it.texto||'')+(it.recommended?' · recomendada':'')+'</div>';
+          if (it.explicacao) h += '<div style="font-size:13px;color:var(--text-secondary);margin:8px 0">'+it.explicacao+'</div>';
+          if (it.scores) {
+            h += '<div class="potential-scores">';
+            Object.keys(it.scores).forEach(function(k){
+              h += '<div class="potential-item"><div class="score '+scoreClass(it.scores[k])+'">'+it.scores[k]+'/10</div><div class="label">'+k+'</div></div>';
+            });
+            h += '</div>';
+          }
+          h += '</div>';
+        });
+        h += '<div class="actions">'+backBtn(5)+'<button class="btn btn-primary" '+(st.selected==null?'disabled':'')+' onclick="approvePromessaStage6()">Aprovar promessa →</button></div></div>';
+        container.innerHTML = h;
+        return;
+      }
+      if (st.step === 'oferta' && !st.data) {
+        container.innerHTML = '<div class="stage-panel active"><div class="loading"><div class="spinner"></div><p>Montando oferta e sugerindo bônus...</p></div></div>';
+        runOfertaAI();
+        return;
+      }
+      if (st.step === 'oferta') {
+        var o = st.data;
+        var bonuses = st.bonusOptions || [];
+        container.innerHTML = '<div class="stage-panel active"><div class="stage-header"><h2>Transforme seu Produto Mínimo em uma oferta.</h2><p>Preencha, escolha os bônus e depois gere a copy e o texto da página de vendas.</p></div><div class="ai-result"><div class="profile-grid"><div class="profile-item full"><label>Nome do produto</label><input type="text" id="of-nome" value="'+o.nome+'"></div><div class="profile-item full"><label>Promessa</label><textarea id="of-promessa">'+o.promessa+'</textarea></div><div class="profile-item full"><label>Transformação</label><textarea id="of-transformacao">'+o.transformacao+'</textarea></div><div class="profile-item full"><label>Benefícios</label><textarea id="of-beneficios">'+o.beneficios+'</textarea></div><div class="profile-item full"><label>O que está incluído</label><textarea id="of-incluido">'+o.incluido+'</textarea></div><div class="profile-item"><label>Preço (sua decisão)</label><input type="text" id="of-preco" value="'+(o.preco||'[NÃO DEFINIDO]')+'"></div><div class="profile-item"><label>Garantia (sua decisão)</label><input type="text" id="of-garantia" value="'+(o.garantia||'[NÃO DEFINIDA]')+'"></div><div class="profile-item full"><label>Principais objeções</label><textarea id="of-objecoes">'+o.objecoes+'</textarea></div><div class="profile-item full"><label>CTA</label><input type="text" id="of-cta" value="'+o.cta+'"></div></div></div><div class="info-banner"><strong>Lógica do preço:</strong> '+o.logicaPreco+'</div><div class="warning-banner">Você ainda não possui provas sociais. Não invente depoimentos.</div><div class="ai-result"><h3>Bônus sugeridos (HIPÓTESES da IA)</h3><p style="font-size:13px;color:var(--text-secondary);margin-bottom:12px">Não entram na oferta até você marcar. Só os marcados viram decisão.</p>' +
+          bonuses.map(function(b,i){
+            return '<div class="bonus-card '+(st.selectedBonus.indexOf(i)>=0?'selected':'')+'" onclick="toggleBonus('+i+')"><div class="bonus-check"></div><div class="bonus-content"><h4>'+b.nome+'</h4><p>'+b.descricao+'</p><p style="margin-top:4px;font-size:11px;color:var(--text-muted)">Por que funciona: '+b.porque+'</p></div></div>';
+          }).join('') +
+          '</div><div class="actions">'+backBtn(5)+'<button class="btn btn-primary" onclick="gerarCopyEPagina()">Criar página de vendas (Blueprint → Texto → Auditoria) →</button></div></div>';
+      } else if (st.step === 'pagebuilder') {
+        var step = st.pageStep || 'blueprint';
+        var htmlPb = '<div class="stage-panel active"><div class="stage-header"><h2>Página de vendas em 3 etapas</h2><p>Blueprint → Escrever → Auditoria. Mesma lógica do bônus de página, dentro do produto.</p></div>';
+        htmlPb += '<div class="info-banner" style="margin-bottom:16px"><strong>Etapa atual:</strong> ';
+        if (step === 'blueprint' || step === 'loading') htmlPb += '1/3 — Blueprint estratégico';
+        else if (step === 'writing') htmlPb += '2/3 — Escrevendo página...';
+        else if (step === 'page') htmlPb += '2/3 — Página escrita (revise)';
+        else if (step === 'auditing') htmlPb += '3/3 — Auditando...';
+        else if (step === 'audit') htmlPb += '3/3 — Auditoria';
+        htmlPb += '</div>';
+
+        if (step === 'blueprint' || step === 'loading') {
+          if (!st.blueprint) {
+            htmlPb += '<div class="loading"><div class="spinner"></div><p>Planejando a página (Blueprint)...</p></div>';
+          } else {
+            htmlPb += '<div class="ai-result"><h3>Blueprint Estratégico</h3><textarea id="blueprint-text" style="min-height:320px;line-height:1.6">'+String(st.blueprint).replace(/</g,'&lt;')+'</textarea></div>';
+            htmlPb += '<div class="actions">'+backBtn(6,'oferta')+'<button class="btn btn-primary" onclick="stageState[6].blueprint=document.getElementById(\'blueprint-text\').value;runPageWrite()">Escrever página →</button></div>';
+          }
+        } else if (step === 'writing' || step === 'auditing') {
+          htmlPb += '<div class="loading"><div class="spinner"></div><p>'+(step==='writing'?'Escrevendo página com base no blueprint...':'Auditando a página...')+'</p></div>';
+        } else if (step === 'page') {
+          htmlPb += '<div class="ai-result"><h3>Página de vendas</h3><textarea id="page-copy-text" style="min-height:360px;line-height:1.65">'+String(product.data.pageCopy||'').replace(/</g,'&lt;')+'</textarea></div>';
+          htmlPb += '<div class="actions">'+backBtn(6,'oferta')+'<button class="btn btn-secondary" onclick="stageState[6].pageStep=\'blueprint\';renderStage()">← Ver blueprint</button><button class="btn btn-primary" onclick="product.data.pageCopy=document.getElementById(\'page-copy-text\').value;runPageAudit()">Auditar página →</button><button class="btn btn-success" onclick="product.data.pageCopy=document.getElementById(\'page-copy-text\').value;stageState[6].fullCopy=product.data.pageCopy;stageState[6].step=\'copy\';renderStage()">Usar esta página →</button></div>';
+        } else if (step === 'audit') {
+          htmlPb += '<div class="ai-result"><h3>Auditoria de conversão</h3><div class="roteiro-block" style="white-space:pre-line;font-size:13px">'+String(st.pageAudit||'').replace(/</g,'&lt;')+'</div></div>';
+          htmlPb += '<div class="actions"><button class="btn btn-secondary" onclick="stageState[6].pageStep=\'page\';renderStage()">← Voltar à página</button><button class="btn btn-primary" onclick="runPageOptimize()">Aplicar melhorias prioritárias</button><button class="btn btn-success" onclick="stageState[6].fullCopy=product.data.pageCopy||\'\';stageState[6].step=\'copy\';renderStage()">Aprovar página →</button></div>';
+        }
+        htmlPb += '</div>';
+        container.innerHTML = htmlPb;
+      } else if (st.step === 'copy') {
+        container.innerHTML = '<div class="stage-panel active"><div class="stage-header"><h2>Copy da oferta e texto da página</h2><p>Revise, edite se quiser e aprove a oferta completa.</p></div><div class="ai-result"><h3>Copy / Página de vendas</h3><textarea id="full-copy-text" style="min-height:280px;line-height:1.65">'+(st.fullCopy||product.data.pageCopy||'').replace(/</g,'&lt;')+'</textarea></div><div class="ai-result"><h3>Texto da página (editável)</h3><textarea id="page-copy-text" style="min-height:220px;line-height:1.65">'+(product.data.pageCopy||'').replace(/</g,'&lt;')+'</textarea></div><div class="actions">'+backBtn(6,'oferta')+'<button class="btn btn-secondary" onclick="stageState[6].step=\'pagebuilder\';stageState[6].pageStep=\'page\';renderStage()">← Voltar ao construtor</button><button class="btn btn-success" onclick="approveOferta()">Aprovar Oferta</button></div></div>';
+      } else if (st.step === 'done') {
+        container.innerHTML = '<div class="stage-panel active"><div class="success-banner">✓ Etapa 06 concluída — Oferta aprovada</div><div class="ai-result"><h3>Oferta</h3><p style="font-size:13px;color:var(--text-secondary)"><strong>'+product.data.nome+'</strong> — '+product.data.preco+'</p><p style="font-size:13px;color:var(--text-secondary);margin-top:6px">'+product.data.promessa+'</p>'+(product.data.bonus?'<p style="font-size:12px;color:var(--text-muted);margin-top:6px"><strong>Bônus:</strong> '+product.data.bonus+'</p>':'')+'</div><div class="actions">'+backBtn(6,'copy')+'<button class="btn btn-secondary" onclick="showPageCopy()">Ver texto da página</button><button class="btn btn-primary" onclick="goToStage(7)">Continuar para Publicação →</button></div></div>';
+      }
+    }
+
+    
+    async function runPromessaStage6AI() {
+      if (!hasRealAI()) {
+        setTimeout(function(){
+          stageState[6].options = {
+            recommendation: 'Escolha a mais específica e crível.',
+            items: [
+              { texto: product.data.transformacao ? 'Consiga: ' + String(product.data.transformacao).replace(/^De:.*→\s*Para:\s*/i,'') : 'Alcance o resultado em poucos dias', scores: { desejo: 8, clareza: 8, especificidade: 7, credibilidade: 8 }, recommended: true, explicacao: 'Alinhada à transformação.' },
+              { texto: 'Do problema à prática em um caminho simples', scores: { desejo: 7, clareza: 7, especificidade: 6, credibilidade: 8 }, recommended: false, explicacao: 'Mais genérica.' }
+            ]
+          };
+          renderStage();
+        }, 800);
+        return;
+      }
+      try {
+        var prompt = contextPromptBlock() + `\n\nGere no máximo 3 PROMESSAS para produto de entrada R$27–97.\nEspecífica, desejada, crível, entregue pelo produto. Máx 25 palavras cada.\nJSON:\n\`\`\`json\n{"recommendation":"...","items":[{"texto":"...","scores":{"desejo":9,"clareza":8,"especificidade":8,"credibilidade":8},"explicacao":"...","recommended":true}]}\n\`\`\``;
+        var text = await callGemini(prompt);
+        var parsed = extractJSON(text);
+        if (parsed && parsed.items && parsed.items.length) {
+          stageState[6].options = {
+            recommendation: parsed.recommendation || '',
+            items: parsed.items.map(function(it){
+              var t = (it.texto != null ? String(it.texto) : '').trim();
+              return {
+                texto: t,
+                scores: it.scores || {},
+                explicacao: it.explicacao || '',
+                recommended: !!it.recommended
+              };
+            }).filter(function(it){ return !!it.texto; })
+          };
+          if (!stageState[6].options.items.length) {
+            alert('A IA não retornou promessas com texto válido. Tente novamente.');
+            stageState[6].options = null;
+          }
+        } else {
+          alert('A IA não retornou promessas no formato esperado. Tente novamente.');
+          stageState[6].options = null;
+        }
+        renderStage();
+      } catch(e) {
+        alert('Não foi possível gerar esta etapa automaticamente. ' + (e.message||e));
+        stageState[6].options = null;
+        renderStage();
+      }
+    }
+
+    function approvePromessaStage6() {
+      var st = stageState[6];
+      if (st.selected == null || st.selected === undefined) {
+        alert('Selecione uma promessa antes de continuar.');
+        return;
+      }
+      if (!st.options || !st.options.items || !st.options.items[st.selected]) {
+        alert('Nenhuma promessa válida encontrada. Gere novamente.');
+        return;
+      }
+      var it = st.options.items[st.selected];
+      var promessa = (it.texto != null ? String(it.texto) : '').trim();
+      if (!promessa) {
+        alert('Nenhuma promessa válida foi encontrada na opção selecionada (texto vazio). Escolha outra ou gere novamente.');
+        return;
+      }
+      // Alerta transformação x promessa
+      var tr = product.data.transformacao || '';
+      if (tr) {
+        var prLow = String(promessa).toLowerCase();
+        var risk = ['eliminar completamente','elimine completamente','nunca mais','para sempre','sem esforço','garantido 100','ansiedade'].some(function(w){ return prLow.indexOf(w)>=0; });
+        if (risk) {
+          var ok = confirm('ALERTA DE PROMESSA\n\nA promessa parece mais forte do que a transformação aprovada.\n\nTransformação:\n' + tr + '\n\nPromessa proposta:\n' + promessa + '\n\nOK = manter e aprovar conscientemente\nCancelar = reformular');
+          if (!ok) return;
+        }
+      }
+      product.data.promessa = promessa;
+      product.data.promessaEscolhida = it;
+      setOfficialDecision('promessa', promessa);
+      st.step = 'oferta';
+      st.data = null;
+      persistCurrent();
+      updateSummary();
+      renderStage();
+    }
+
+    async function runOfertaAI() {
+      if (!hasRealAI()) {
+        alert('Não foi possível gerar esta etapa automaticamente. Configure a IA e tente novamente.');
+        stageState[6].data = {
+          nome: product.data.nome || '',
+          promessa: product.data.promessa || '',
+          transformacao: product.data.transformacao || '',
+          beneficios: '',
+          incluido: product.data.estrutura || '',
+          preco: product.data.preco || '[NÃO DEFINIDO]',
+          garantia: product.data.garantia || '[NÃO DEFINIDA]',
+          objecoes: '',
+          cta: '',
+          logicaPreco: '',
+          precoSugestaoIA: null,
+          garantiaSugestaoIA: null
+        };
+        stageState[6].bonusOptions = [];
+        stageState[6].selectedBonus = [];
+        stageState[6].fullCopy = null;
+        renderStage();
+        return;
+      }
+      try {
+        var d = product.data;
+        var prompt = contextPromptBlock() + `
+
+Monte a oferta do Produto Mínimo com base APENAS nas decisões aprovadas.
+
+REGRAS CRÍTICAS:
+- NÃO invente preço. Se não estiver nas decisões, preco = "[NÃO DEFINIDO]".
+- NÃO invente garantia. Se não estiver, garantia = "[NÃO DEFINIDA]".
+- Você PODE sugerir preço/garantia apenas nos campos precoSugestaoIA e garantiaSugestaoIA (rótulo: SUGESTÃO DA IA).
+- Bônus em bonus[] são apenas SUGESTÕES; não são aprovados.
+- Não invente depoimentos nem provas.
+- Não altere nome, promessa, transformação ou público aprovados.
+
+Responda APENAS com JSON:
+\`\`\`json
+{
+  "nome": "usar decisão aprovada",
+  "promessa": "usar decisão aprovada",
+  "transformacao": "usar decisão aprovada",
+  "beneficios": "lista com bullets",
+  "incluido": "lista com bullets alinhada à estrutura",
+  "preco": "[NÃO DEFINIDO]",
+  "garantia": "[NÃO DEFINIDA]",
+  "precoSugestaoIA": "ex: R$ 27 — só sugestão",
+  "garantiaSugestaoIA": "ex: 7 dias — só sugestão",
+  "objecoes": "objeções e respostas",
+  "cta": "texto de CTA",
+  "logicaPreco": "só se houver sugestão, deixar claro que é hipótese",
+  "bonus": [
+    {"nome":"...","descricao":"...","porque":"..."}
+  ]
+}
+\`\`\``;
+        var text = await callGemini(prompt);
+        var parsed = extractJSON(text);
+        if (parsed) {
+          stageState[6].data = {
+            nome: d.nome || parsed.nome || '',
+            promessa: d.promessa || parsed.promessa || '',
+            transformacao: d.transformacao || parsed.transformacao || '',
+            beneficios: parsed.beneficios || '',
+            incluido: parsed.incluido || '',
+            preco: (d.preco && d.preco !== '[NÃO DEFINIDO]') ? d.preco : '[NÃO DEFINIDO]',
+            garantia: (d.garantia && d.garantia !== '[NÃO DEFINIDA]') ? d.garantia : '[NÃO DEFINIDA]',
+            precoSugestaoIA: parsed.precoSugestaoIA || null,
+            garantiaSugestaoIA: parsed.garantiaSugestaoIA || null,
+            objecoes: parsed.objecoes || '',
+            cta: parsed.cta || '',
+            logicaPreco: parsed.logicaPreco || ''
+          };
+          stageState[6].bonusOptions = (parsed.bonus || []).map(function(b){
+            return { nome: b.nome||'', descricao: b.descricao||'', porque: b.porque||'', sugerido: true };
+          });
+        } else {
+          alert('Não foi possível gerar esta etapa automaticamente. Tente novamente.');
+          stageState[6].data = {
+            nome: d.nome || '', promessa: d.promessa || '', transformacao: d.transformacao || '',
+            beneficios: '', incluido: '', preco: '[NÃO DEFINIDO]', garantia: '[NÃO DEFINIDA]',
+            objecoes: '', cta: '', precoSugestaoIA: null, garantiaSugestaoIA: null
+          };
+          stageState[6].bonusOptions = [];
+        }
+        stageState[6].selectedBonus = [];
+        stageState[6].fullCopy = null;
+        renderStage();
+      } catch(e) {
+        console.error(e);
+        alert('Não foi possível gerar esta etapa automaticamente. ' + (e.message||e));
+        stageState[6].data = {
+          nome: product.data.nome || '', promessa: product.data.promessa || '',
+          transformacao: product.data.transformacao || '', beneficios: '', incluido: '',
+          preco: '[NÃO DEFINIDO]', garantia: '[NÃO DEFINIDA]', objecoes: '', cta: ''
+        };
+        stageState[6].bonusOptions = [];
+        stageState[6].selectedBonus = [];
+        stageState[6].fullCopy = null;
+        renderStage();
+      }
+    }
+
+    function generateOferta() {
+      return {
+        nome: product.data.nome || 'Produto Mínimo',
+        promessa: product.data.promessa || 'Alcance seus primeiros resultados de forma clara e prática.',
+        transformacao: product.data.transformacao || 'De confuso → para alguém que executa e vê resultado.',
+        beneficios: '• Clareza total do que fazer\n• Método passo a passo sem enrolação\n• Aplicação prática desde a primeira aula\n• Resultado visível em poucos dias',
+        incluido: '• 7 aulas em vídeo\n• Materiais de apoio\n• Exercícios práticos\n• Acesso por 1 ano',
+        preco: 'R$ 97',
+        garantia: '7 dias de garantia incondicional',
+        objecoes: '• "Já vi muita coisa parecida" → Foco em execução mínima e resultado rápido\n• "Não tenho tempo" → Estrutura para poucos dias\n• "E se não funcionar?" → Garantia de 7 dias',
+        cta: 'Quero começar agora',
+        logicaPreco: 'R$ 97 é preço de entrada. Baixo atrito para validar. Depois de provas sociais, pode subir ou criar versão premium.'
+      };
+    }
+
+    function generateBonusSuggestions() {
+      return [
+        { nome: 'Checklist de Implementação em 7 Dias', descricao: 'Lista pronta do que fazer em cada um dos primeiros 7 dias.', porque: 'Reduz “não sei por onde começar” e aumenta conclusão.' },
+        { nome: 'Modelo de Planejamento dos Primeiros Resultados', descricao: 'Template simples para registrar meta, ações e resultado esperado.', porque: 'Transforma conhecimento em ação e gera prova social natural.' },
+        { nome: 'Guia Rápido: Erros que Travaram 90% das Pessoas', descricao: 'PDF curto com os erros mais comuns do seu público e como evitá-los.', porque: 'Aumenta valor percebido e posiciona você como quem já viu os problemas.' }
+      ];
+    }
+
+    function toggleBonus(i) {
+      var arr = stageState[6].selectedBonus;
+      var idx = arr.indexOf(i);
+      if (idx >= 0) arr.splice(idx, 1); else arr.push(i);
+      renderStage();
+    }
+
+    function gerarCopyEPagina() {
+      // Start 3-step page builder: blueprint -> write -> audit
+      stageState[6].pageStep = 'blueprint';
+      stageState[6].blueprint = null;
+      stageState[6].fullCopy = null;
+      product.data.pageCopy = null;
+      stageState[6].pageAudit = null;
+      stageState[6].step = 'pagebuilder';
+      renderStage();
+      runPageBlueprint();
+    }
+
+    function pageBuilderContext() {
+      var o = stageState[6].data || {};
+      var d = product.data;
+      var pub = d.publicoDetalhado || {};
+      var selected = (stageState[6].selectedBonus || []).map(function(i){ return stageState[6].bonusOptions[i]; });
+      var bonusText = selected.length ? selected.map(function(b){ return '• '+b.nome+': '+(b.descricao||''); }).join('\n') : (d.bonus||'');
+      return {
+        nome: document.getElementById('of-nome') ? document.getElementById('of-nome').value.trim() : (o.nome||d.nome||''),
+        promessa: document.getElementById('of-promessa') ? document.getElementById('of-promessa').value.trim() : (o.promessa||d.promessa||''),
+        transformacao: document.getElementById('of-transformacao') ? document.getElementById('of-transformacao').value.trim() : (o.transformacao||d.transformacao||''),
+        beneficios: document.getElementById('of-beneficios') ? document.getElementById('of-beneficios').value.trim() : (o.beneficios||''),
+        incluido: document.getElementById('of-incluido') ? document.getElementById('of-incluido').value.trim() : (o.incluido||''),
+        preco: document.getElementById('of-preco') ? document.getElementById('of-preco').value.trim() : (o.preco||d.preco||'R$ 27'),
+        garantia: document.getElementById('of-garantia') ? document.getElementById('of-garantia').value.trim() : (o.garantia||''),
+        objecoes: document.getElementById('of-objecoes') ? document.getElementById('of-objecoes').value.trim() : (o.objecoes||''),
+        cta: document.getElementById('of-cta') ? document.getElementById('of-cta').value.trim() : (o.cta||''),
+        publico: d.publico || '',
+        problema: d.problema || '',
+        linguagem: pub.linguagem || '',
+        desejo: pub.desejo || '',
+        bonusText: bonusText,
+        estrutura: d.estrutura || ''
+      };
+    }
+
+    async function runPageBlueprint() {
+      // V2.2: validação antes da página
+      var missing = [];
+      if (!product.data.publico) missing.push('público');
+      if (!product.data.problema) missing.push('dor');
+      if (!product.data.transformacao) missing.push('transformação');
+      if (!product.data.promessa) missing.push('promessa');
+      if (!product.data.nome) missing.push('produto');
+      if (!product.data.estruturaAulas || !product.data.estruturaAulas.length) missing.push('estrutura');
+      var preco = (stageState[6].data && stageState[6].data.preco) || product.data.preco || '';
+      if (!preco || String(preco).indexOf('NÃO DEFINIDO') >= 0) missing.push('preço oficial');
+      if (missing.length) {
+        alert('INFORMAÇÃO NECESSÁRIA ANTES DE GERAR A PÁGINA\n\nAinda não definido: ' + missing.join(', ') + '\n\nDefina e aprove antes de gerar a página. A IA não inventará esses dados.');
+        return;
+      }
+      var ctx = pageBuilderContext();
+      stageState[6].data = Object.assign({}, stageState[6].data, {
+        nome: ctx.nome, promessa: ctx.promessa, transformacao: ctx.transformacao,
+        beneficios: ctx.beneficios, incluido: ctx.incluido, preco: ctx.preco,
+        garantia: ctx.garantia, objecoes: ctx.objecoes, cta: ctx.cta
+      });
+
+      function localBlueprint() {
+        return 'BLUEPRINT ESTRATÉGICO DA PÁGINA\n\n' +
+          '1. HEADLINE (direções)\n- Foque na transformação: ' + ctx.promessa + '\n- Foque na dor: ' + ctx.problema + '\n\n' +
+          '2. IDENTIFICAÇÃO\nLinguagem: ' + (ctx.linguagem||'usar dor do público') + '\n\n' +
+          '3. TRANSFORMAÇÃO\n' + ctx.transformacao + '\n\n' +
+          '4. OFERTA\n' + ctx.incluido + '\nPreço: ' + ctx.preco + '\nBônus:\n' + ctx.bonusText + '\n\n' +
+          '5. CTA\n' + ctx.cta + '\n\n' +
+          '6. PARA QUEM É / NÃO É\nDefinir com base no público: ' + ctx.publico + '\n\n' +
+          '7. GARANTIA\n' + ctx.garantia;
+      }
+
+      if (!hasRealAI()) {
+        stageState[6].blueprint = localBlueprint();
+        renderStage();
+        return;
+      }
+
+      var prompt = contextPromptBlock() + `\n\nVocê é Estrategista Sênior de páginas de vendas para Produto Mínimo.\nNÃO escreva a página ainda. Entregue apenas o BLUEPRINT ESTRATÉGICO.\nUse só fatos e decisões. Sem preço/garantia/provas se [NÃO DEFINIDO]/[NÃO DEFINIDA]/vazio.\nSe faltar prova: [PROVA NECESSÁRIA — NÃO INFORMADA].\n\nDados do produto:
+Nome: ` + ctx.nome + `
+Promessa: ` + ctx.promessa + `
+Problema: ` + ctx.problema + `
+Transformação: ` + ctx.transformacao + `
+Público: ` + ctx.publico + `
+Linguagem: ` + ctx.linguagem + `
+Desejo: ` + ctx.desejo + `
+Incluído: ` + ctx.incluido + `
+Benefícios: ` + ctx.beneficios + `
+Bônus: ` + ctx.bonusText + `
+Preço: ` + ctx.preco + `
+Garantia: ` + ctx.garantia + `
+Objeções: ` + ctx.objecoes + `
+CTA: ` + ctx.cta + `
+Estrutura: ` + ctx.estrutura + `
+
+Monte o blueprint com:
+1. Diagnóstico rápido (promessa clara? público claro?)
+2. Headline — 5 direções diferentes (não escolha a final)
+3. Subheadline — função
+4. Identificação (dores, pensamentos, linguagem)
+5. Quebra de crença principal
+6. Transformação (antes/depois)
+7. Como funciona (evolução, não lista de aulas)
+8. Oferta e bônus (função de cada um)
+9. Ancoragem de valor (plausível, sem exagero)
+10. Provas: só se houver reais — senão diga para não inventar
+11. Para quem é / não é
+12. Garantia sugerida
+13. CTA — 3 direções
+14. FAQ só com objeções reais do contexto
+
+Tom: produto de entrada, compra por impulso, página CURTA.
+Não invente depoimentos.`;
+
+      try {
+        var text = await callGemini(prompt);
+        stageState[6].blueprint = text || localBlueprint();
+      } catch (e) {
+        stageState[6].blueprint = localBlueprint();
+        alert('Blueprint local (IA falhou): ' + (e.message||e));
+      }
+      renderStage();
+    }
+
+    async function runPageWrite() {
+      var ctx = pageBuilderContext();
+      var bp = stageState[6].blueprint || '';
+      stageState[6].pageStep = 'writing';
+      renderStage();
+
+      function localPage() {
+        return 'HEADLINE\n' + ctx.promessa + '\n\n' +
+          'SUBHEADLINE\nPara quem reconhece esta dor: ' + ctx.problema + '\n\n' +
+          'O PROBLEMA\n' + ctx.problema + '\n\n' + (ctx.linguagem ? ctx.linguagem + '\n\n' : '') +
+          'A SOLUÇÃO\n' + ctx.nome + ' — ' + ctx.promessa + '\n\n' +
+          'O QUE VOCÊ VAI CONSEGUIR\n' + ctx.transformacao + '\n\n' +
+          'O QUE ESTÁ INCLUSO\n' + ctx.incluido + '\n\n' +
+          (ctx.bonusText ? 'BÔNUS\n' + ctx.bonusText + '\n\n' : '') +
+          'INVESTIMENTO\n' + ctx.preco + '\n' + ctx.garantia + '\n\n' +
+          'BOTÃO\n' + ctx.cta;
+      }
+
+      if (!hasRealAI()) {
+        product.data.pageCopy = localPage();
+        stageState[6].fullCopy = localPage();
+        stageState[6].pageStep = 'page';
+        renderStage();
+        return;
+      }
+
+      var prompt = contextPromptBlock() + `\n\nVocê é Copy Chief Sênior de páginas de vendas low ticket.\nTransforme o BLUEPRINT em PÁGINA completa.\nSó decisões aprovadas. Não invente depoimentos, números, preço, garantia ou bônus não aprovados.\nSe preço for [NÃO DEFINIDO], escreva [PREÇO NÃO DEFINIDO]. Idem garantia.\nSe faltar prova: [PROVA NECESSÁRIA — NÃO INFORMADA].
+
+BLUEPRINT:
+` + bp + `
+
+DADOS:
+Nome: ` + ctx.nome + `
+Promessa: ` + ctx.promessa + `
+Preço: ` + ctx.preco + `
+CTA: ` + ctx.cta + `
+
+REGRAS:
+- Tráfego frio, leitura rápida, frases curtas
+- Venda transformação, NÃO lista de aulas
+- Estrutura: HERO (headline+sub) | Problema | Nova forma | Transformação | Método (evolução) | Conquistas | Bônus | Para quem é / não é | Oferta + preço | Garantia | CTA | FAQ curto
+- Sem urgência/escassez falsa
+- Tom humano, conversa com uma pessoa
+
+Entregue APENAS o texto da página, com títulos de seção claros.`;
+
+      try {
+        var text = await callGemini(prompt);
+        product.data.pageCopy = text || localPage();
+        stageState[6].fullCopy = product.data.pageCopy;
+      } catch (e) {
+        product.data.pageCopy = localPage();
+        stageState[6].fullCopy = product.data.pageCopy;
+        alert('Página local (IA falhou): ' + (e.message||e));
+      }
+      var pageVal = validatePageAgainstOfficialContext(product.data.pageCopy || '');
+      if (pageVal.issues && pageVal.issues.length) {
+        alert('VALIDAÇÃO DA PÁGINA\n\n' + pageVal.issues.map(function(is){ return (is.severity==='error'?'⛔ ':'⚠️ ') + is.message; }).join('\n\n'));
+      }
+      stageState[6].pageStep = 'page';
+      renderStage();
+    }
+
+    async function runPageAudit() {
+      var page = product.data.pageCopy || stageState[6].fullCopy || '';
+      var bp = stageState[6].blueprint || '';
+      stageState[6].pageStep = 'auditing';
+      renderStage();
+
+      if (!hasRealAI()) {
+        stageState[6].pageAudit = 'Auditoria (modo local)\n\n- Verifique se a headline comunica a transformação.\n- Confirme que não há depoimentos inventados.\n- Preço aparece depois do valor percebido.\n- CTA claro e repetido.\n- Página curta o suficiente para compra por impulso.\n\nDeseja seguir com esta versão?';
+        stageState[6].pageStep = 'audit';
+        renderStage();
+        return;
+      }
+
+      var prompt = contextPromptBlock() + `\n\nVocê é Auditor de Conversão e Veracidade.\nNÃO reescreva a página ainda.\nAvalie 4 dimensões: (1) CONVERSÃO (2) COERÊNCIA com decisões aprovadas (3) VERACIDADE — algo inventado/exagerado como fato? (4) ENTREGA — o produto entrega o que a página promete?\nAponte: promessa > transformação; números sem fonte; público inventado; prova inexistente; bônus não aprovados; preço/garantia divergentes; contradições.\nNão dê nota alta por padrão. Procure motivos para corrigir.\n\nBLUEPRINT:
+` + bp.substring(0, 3000) + `
+
+PÁGINA:
+` + page.substring(0, 6000) + `
+
+Entregue:
+1. Diagnóstico geral (promessa clara? leitura fluida? oferta irresistível?)
+2. Nota 0-10 por bloco: Headline, Problema, Transformação, Oferta, Bônus, Preço, CTA, FAQ
+3. Psicologia: confiança, desejo, clareza, objeções faltando
+4. Prioridade Alta / Média / Baixa de melhorias (específicas)
+5. Ao final pergunte se deve aplicar as melhorias de prioridade alta
+
+Não invente dados do produto.`;
+
+      try {
+        var text = await callGemini(prompt);
+        stageState[6].pageAudit = text || 'Auditoria indisponível.';
+      } catch (e) {
+        stageState[6].pageAudit = 'Auditoria falhou: ' + (e.message||e);
+      }
+      stageState[6].pageStep = 'audit';
+      renderStage();
+    }
+
+    async function runPageOptimize() {
+      var page = product.data.pageCopy || '';
+      var audit = stageState[6].pageAudit || '';
+      stageState[6].pageStep = 'writing';
+      renderStage();
+      if (!hasRealAI()) {
+        alert('Configure a IA para otimizar automaticamente.');
+        stageState[6].pageStep = 'audit';
+        renderStage();
+        return;
+      }
+      var prompt = `Aplique APENAS as melhorias de prioridade alta desta auditoria na página.
+Preserve promessa, posicionamento e oferta. Não reescreva do zero. Não invente depoimentos.
+
+AUDITORIA:
+` + audit.substring(0, 4000) + `
+
+PÁGINA ATUAL:
+` + page.substring(0, 6000) + `
+
+Entregue APENAS a página otimizada completa.`;
+      try {
+        var text = await callGemini(prompt);
+        if (text) {
+          product.data.pageCopy = text;
+          stageState[6].fullCopy = text;
+        }
+      } catch (e) {
+        alert('Otimização falhou: ' + (e.message||e));
+      }
+      stageState[6].pageStep = 'page';
+      renderStage();
+    }
+
+    function approveOferta() {
+      var copyEl = document.getElementById('full-copy-text');
+      var pageEl = document.getElementById('page-copy-text');
+      if (copyEl) stageState[6].fullCopy = copyEl.value;
+      if (pageEl) product.data.pageCopy = pageEl.value;
+      if (copyEl) product.data.copyOferta = copyEl.value;
+      var o = stageState[6].data;
+      product.data.nome = o.nome || product.data.nome;
+      product.data.promessa = o.promessa;
+      product.data.transformacao = o.transformacao;
+      product.data.preco = (o.preco && String(o.preco).trim()) ? o.preco.trim() : '[NÃO DEFINIDO]';
+      product.data.garantia = (o.garantia && String(o.garantia).trim()) ? o.garantia.trim() : '[NÃO DEFINIDA]';
+      if (product.data.preco.indexOf('NÃO DEFINIDO') < 0) setOfficialDecision('preco', product.data.preco);
+      if (product.data.garantia.indexOf('NÃO DEFINIDA') < 0) setOfficialDecision('garantia', product.data.garantia);
+      if (o.cta) setOfficialDecision('cta', o.cta);
+      var selectedBonus = (stageState[6].selectedBonus || []).map(function(i){ return stageState[6].bonusOptions[i]; }).filter(Boolean);
+      if (selectedBonus.length) {
+        product.data.bonus = selectedBonus.map(function(b){ return b.nome; }).join('; ');
+        setOfficialDecision('bonus', product.data.bonus);
+      } else {
+        product.data.bonus = '';
+      }
+      product.data.oferta = product.data.nome + (product.data.preco && product.data.preco.indexOf('NÃO DEFINIDO')<0 ? (' — ' + product.data.preco) : '');
+      setOfficialDecision('oferta', product.data.oferta);
+
+      var selected = stageState[6].selectedBonus.map(function(i){ return stageState[6].bonusOptions[i]; });
+      product.data.bonusSelecionados = selected;
+      product.data.bonus = selected.map(function(b){ return b.nome; }).join(' · ') || '';
+      product.data.ofertaCompleta = Object.assign({}, o, { bonus: product.data.bonus, bonusDetalhes: selected, fullCopy: stageState[6].fullCopy });
+      stageState[6].step = 'done';
+      completeStage(6);
+      updateProductPanel();
+      renderStage();
+    }
+
+    function showPageCopy() {
+      document.getElementById('page-content').innerHTML = '<div class="roteiro-block">'+(product.data.pageCopy||'').replace(/\n/g,'<br>')+'</div>';
+      window._lastPageCopy = product.data.pageCopy || '';
+      document.getElementById('page-modal').classList.add('open');
+    }
+
+    function copyPageCopy() {
+      navigator.clipboard.writeText(window._lastPageCopy || product.data.pageCopy || '').then(function(){ alert('Texto da página copiado!'); });
+    }
+
+    // STAGE 7
+    function renderStage7(container, st) {
+      var checks = [
+        { id: 'estruturado', label: 'Produto estruturado' },
+        { id: 'aulas', label: 'Aulas gravadas' },
+        { id: 'materiais', label: 'Materiais organizados' },
+        { id: 'plataforma', label: 'Plataforma escolhida' },
+        { id: 'cadastrado', label: 'Produto cadastrado' },
+        { id: 'checkout', label: 'Checkout configurado' },
+        { id: 'pagina', label: 'Página criada' },
+        { id: 'link', label: 'Link de compra funcionando' },
+        { id: 'bio', label: 'Link colocado na bio' },
+        { id: 'conteudo', label: 'Primeiro conteúdo publicado' }
+      ];
+      if (!product.data.checklist) product.data.checklist = {};
+      if (!product.data.checklist.estruturado) product.data.checklist.estruturado = true;
+
+      container.innerHTML = '<div class="stage-panel active"><div class="stage-header"><h2>Seu Produto Mínimo está pronto. Coloque no mundo.</h2><p>Checklist prático. Foque em gravar, subir e colocar o link na bio.</p></div><div class="checklist">' +
+        checks.map(function(c){
+          return '<div class="check-item '+(product.data.checklist[c.id]?'checked':'')+'" onclick="toggleCheck(\''+c.id+'\')"><div class="check-box"></div><span>'+c.label+'</span></div>';
+        }).join('') +
+        '</div><div class="ai-result" style="margin-top:28px"><h3>Resumo do Produto</h3><div class="profile-grid"><div class="profile-item"><label>Nome</label><div class="value">'+(product.data.nome||'—')+'</div></div><div class="profile-item"><label>Preço</label><div class="value">'+(product.data.preco||'—')+'</div></div><div class="profile-item full"><label>Público</label><div class="value">'+(product.data.publico||'—')+'</div></div><div class="profile-item full"><label>Problema</label><div class="value">'+(product.data.problema||'—')+'</div></div><div class="profile-item full"><label>Promessa</label><div class="value">'+(product.data.promessa||'—')+'</div></div><div class="profile-item full"><label>Bônus</label><div class="value">'+(product.data.bonus||'—')+'</div></div></div></div><div class="actions">'+backBtn(6)+'<button class="btn btn-secondary" onclick="showPageCopy()">Ver texto da página</button><button class="btn btn-primary" style="padding:14px 28px" onclick="openDossier()">📄 Gerar Dossiê</button></div></div>';
+    }
+
+    function toggleCheck(id) {
+      product.data.checklist[id] = !product.data.checklist[id];
+      var done = Object.keys(product.data.checklist).filter(function(k){ return product.data.checklist[k]; }).length;
+      if (done >= 1 && stages[6].status !== 'completed') completeStage(7);
+      persistCurrent();
+      renderStage();
+    }
+
+    function openDossier() {
+      var d = product.data;
+      var pub = d.publicoDetalhado || {};
+      var aulas = d.estruturaAulas || [];
+      var of = d.ofertaCompleta || {};
+      document.getElementById('dossier-content').innerHTML =
+        '<div class="dossier-section"><h4>1. Ideia</h4><p><strong>'+(d.nome||'—')+'</strong></p></div>'+
+        '<div class="dossier-section"><h4>2. Público</h4><p><strong>Quem:</strong> '+(pub.quem||d.publico||'—')+'</p><p><strong>Problema:</strong> '+(pub.problema||'—')+'</p><p><strong>Desejo:</strong> '+(pub.desejo||'—')+'</p><p><strong>Linguagem:</strong> '+(pub.linguagem||'—')+'</p></div>'+
+        '<div class="dossier-section"><h4>3. Problema</h4><p>'+(d.problema||'—')+'</p></div>'+
+        '<div class="dossier-section"><h4>4. Promessa</h4><p>"'+(d.promessa||'—')+'"</p></div>'+
+        '<div class="dossier-section"><h4>5. Transformação</h4><p>'+(d.transformacao||'—')+'</p></div>'+
+        '<div class="dossier-section"><h4>6. Estrutura das aulas</h4><ul>'+(aulas.map(function(a,i){return '<li><strong>Aula '+(i+1)+' — '+a.nome+':</strong> '+a.objetivo+'</li>';}).join('')||'<li>—</li>')+'</ul></div>'+
+        '<div class="dossier-section"><h4>7. Oferta</h4><p><strong>Nome:</strong> '+(of.nome||d.nome||'—')+'</p><p><strong>Preço:</strong> '+(of.preco||d.preco||'—')+'</p><p><strong>Garantia:</strong> '+(of.garantia||'—')+'</p><p><strong>CTA:</strong> '+(of.cta||'—')+'</p></div>'+
+        '<div class="dossier-section"><h4>8. Bônus</h4><p>'+(d.bonus||'—')+'</p></div>'+
+        '<div class="dossier-section"><h4>9. Copy da oferta</h4><p style="white-space:pre-line">'+(of.fullCopy||'—')+'</p></div>'+
+        '<div class="dossier-section"><h4>10. Texto da página de vendas</h4><p style="white-space:pre-line">'+(d.pageCopy||'—')+'</p></div>'+
+        '<div class="dossier-section"><h4>11. Próximos passos</h4><ul><li>Gravar as aulas (use os roteiros)</li><li>Escolher plataforma (Kiwify, Hotmart, Braip...)</li><li>Criar página simples com o texto gerado</li><li>Configurar checkout e testar o link</li><li>Colocar o link na bio</li><li>Publicar o primeiro conteúdo apontando para o link</li></ul></div>';
+      document.getElementById('dossier-modal').classList.add('open');
+    }
+
+    function getDossierText() {
+      var d = product.data;
+      var pub = d.publicoDetalhado || {};
+      var aulas = d.estruturaAulas || [];
+      var of = d.ofertaCompleta || {};
+      return 'DOSSIÊ DO PRODUTO MÍNIMO\n================================\n1. IDEIA\n'+(d.nome||'—')+'\n\n2. PÚBLICO\nQuem: '+(pub.quem||d.publico||'—')+'\nProblema: '+(pub.problema||'—')+'\nDesejo: '+(pub.desejo||'—')+'\nLinguagem: '+(pub.linguagem||'—')+'\n\n3. PROBLEMA\n'+(d.problema||'—')+'\n\n4. PROMESSA\n"'+(d.promessa||'—')+'"\n\n5. TRANSFORMAÇÃO\n'+(d.transformacao||'—')+'\n\n6. ESTRUTURA\n'+(aulas.map(function(a,i){return 'Aula '+(i+1)+' — '+a.nome+': '+a.objetivo;}).join('\n')||'—')+'\n\n7. OFERTA\nNome: '+(of.nome||d.nome||'—')+'\nPreço: '+(of.preco||d.preco||'—')+'\nGarantia: '+(of.garantia||'—')+'\nCTA: '+(of.cta||'—')+'\n\n8. BÔNUS\n'+(d.bonus||'—')+'\n\n9. COPY DA OFERTA\n'+(of.fullCopy||'—')+'\n\n10. TEXTO DA PÁGINA DE VENDAS\n'+(d.pageCopy||'—')+'\n\n11. PRÓXIMOS PASSOS\n- Gravar as aulas (use os roteiros)\n- Escolher plataforma\n- Criar página simples com o texto gerado\n- Configurar checkout e testar o link\n- Colocar o link na bio\n- Publicar o primeiro conteúdo apontando para o link\n';
+    }
+
+    function copyDossier() {
+      navigator.clipboard.writeText(getDossierText()).then(function(){ alert('Dossiê copiado!'); });
+    }
+
+    function downloadDossier() {
+      var blob = new Blob([getDossierText()], { type: 'text/plain;charset=utf-8' });
+      var url = URL.createObjectURL(blob);
+      var a = document.createElement('a');
+      a.href = url;
+      a.download = 'dossie-produto-minimo.txt';
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+
+
+    // ==================== GEMINI + PROMPTS ====================
+    
+    // ==================== MULTI-PROVIDER AI ====================
+    var AI_KEY_STORAGE = 'daideia_ai_key';
+    var AI_PROVIDER_STORAGE = 'daideia_ai_provider';
+    var AI_MODEL_STORAGE = 'daideia_ai_model';
+    // legacy
+    var GEMINI_KEY_STORAGE = 'daideia_gemini_key';
+    var GEMINI_MODEL = 'gemini-3.5-flash';
+    var GEMINI_MODELS = ['gemini-3.7-flash', 'gemini-3.6-flash', 'gemini-3.5-flash', 'gemini-3.5-flash-lite'];
+
+    var AI_PROVIDERS = {
+      gemini: {
+        label: 'Google Gemini',
+        help: 'Chave em aistudio.google.com/apikey — modelos: gemini-3.5-flash, gemini-3.7-flash',
+        defaultModel: 'gemini-3.5-flash',
+        keyPlaceholder: 'AIza...'
+      },
+      grok: {
+        label: 'xAI Grok',
+        help: 'Chave da API em console.x.ai (não é o Grok grátis do app X). Modelos: grok-4.6, grok-4.5',
+        defaultModel: 'grok-4.6',
+        keyPlaceholder: 'xai-...'
+      },
+      openai: {
+        label: 'OpenAI',
+        help: 'Chave em platform.openai.com/api-keys — modelos: gpt-4o-mini, gpt-4o',
+        defaultModel: 'gpt-4o-mini',
+        keyPlaceholder: 'sk-...'
+      },
+      claude: {
+        label: 'Anthropic Claude',
+        help: 'Chave em console.anthropic.com — modelos: claude-sonnet-4-20250514, claude-3-5-haiku-latest',
+        defaultModel: 'claude-sonnet-4-20250514',
+        keyPlaceholder: 'sk-ant-...'
+      },
+      deepseek: {
+        label: 'DeepSeek',
+        help: 'Chave em platform.deepseek.com — modelos: deepseek-chat',
+        defaultModel: 'deepseek-chat',
+        keyPlaceholder: 'sk-...'
+      }
+    };
+
+    function getAIProvider() {
+      return localStorage.getItem(AI_PROVIDER_STORAGE) || 'gemini';
+    }
+    function getAIKey() {
+      var k = localStorage.getItem(AI_KEY_STORAGE) || '';
+      if (!k) k = localStorage.getItem(GEMINI_KEY_STORAGE) || ''; // legacy
+      return k;
+    }
+    function getAIModel() {
+      var m = localStorage.getItem(AI_MODEL_STORAGE) || '';
+      if (m) return m;
+      var p = getAIProvider();
+      return (AI_PROVIDERS[p] && AI_PROVIDERS[p].defaultModel) || '';
+    }
+    function getGeminiKey() { return getAIProvider() === 'gemini' ? getAIKey() : getAIKey(); }
+
+    function hasRealAI() { return !!getAIKey(); }
+
+    function updateProviderHelp() {
+      var sel = document.getElementById('ai-provider-select');
+      var help = document.getElementById('ai-provider-help');
+      var keyInp = document.getElementById('ai-key-input');
+      var modelInp = document.getElementById('ai-model-input');
+      if (!sel) return;
+      var p = AI_PROVIDERS[sel.value] || AI_PROVIDERS.gemini;
+      if (help) help.innerHTML = p.help;
+      if (keyInp) keyInp.placeholder = p.keyPlaceholder;
+      if (modelInp && !modelInp.value) modelInp.placeholder = 'Padrão: ' + p.defaultModel;
+    }
+
+    function openIASettings() {
+      var sel = document.getElementById('ai-provider-select');
+      var keyInp = document.getElementById('ai-key-input');
+      var modelInp = document.getElementById('ai-model-input');
+      if (sel) sel.value = getAIProvider();
+      if (keyInp) keyInp.value = getAIKey();
+      if (modelInp) modelInp.value = localStorage.getItem(AI_MODEL_STORAGE) || '';
+      updateProviderHelp();
+      updateIAStatus();
+      document.getElementById('ia-modal').classList.add('open');
+      if (sel && !sel._bound) {
+        sel.addEventListener('change', updateProviderHelp);
+        sel._bound = true;
+      }
+    }
+
+    function saveAIConfig() {
+      var sel = document.getElementById('ai-provider-select');
+      var keyInp = document.getElementById('ai-key-input');
+      var modelInp = document.getElementById('ai-model-input');
+      var provider = sel ? sel.value : 'gemini';
+      var key = (keyInp && keyInp.value || '').trim();
+      var model = (modelInp && modelInp.value || '').trim();
+      if (!key) { alert('Cole a API key.'); return; }
+      localStorage.setItem(AI_PROVIDER_STORAGE, provider);
+      localStorage.setItem(AI_KEY_STORAGE, key);
+      if (model) localStorage.setItem(AI_MODEL_STORAGE, model);
+      else localStorage.removeItem(AI_MODEL_STORAGE);
+      localStorage.removeItem('daideia_gemini_model');
+      // legacy gemini key sync
+      if (provider === 'gemini') localStorage.setItem(GEMINI_KEY_STORAGE, key);
+      updateIAStatus();
+      alert('Configuração salva (' + (AI_PROVIDERS[provider]||{}).label + '). Clique em Testar conexão.');
+      closeModal('ia-modal');
+    }
+
+    function clearAIConfig() {
+      localStorage.removeItem(AI_KEY_STORAGE);
+      localStorage.removeItem(AI_PROVIDER_STORAGE);
+      localStorage.removeItem(AI_MODEL_STORAGE);
+      localStorage.removeItem(GEMINI_KEY_STORAGE);
+      localStorage.removeItem('daideia_gemini_model');
+      var keyInp = document.getElementById('ai-key-input');
+      var modelInp = document.getElementById('ai-model-input');
+      if (keyInp) keyInp.value = '';
+      if (modelInp) modelInp.value = '';
+      updateIAStatus();
+      alert('Configuração de IA removida.');
+    }
+
+    function updateIAStatus() {
+      var el = document.getElementById('ia-status');
+      if (!el) return;
+      var key = getAIKey();
+      var p = getAIProvider();
+      var label = (AI_PROVIDERS[p]||{}).label || p;
+      if (key) {
+        el.textContent = '✓ IA: ' + label + ' — modelo: ' + getAIModel();
+        el.style.color = 'var(--accent-green)';
+      } else {
+        el.textContent = '○ Sem chave — modo simulado ativo.';
+        el.style.color = 'var(--text-muted)';
+      }
+    }
+
+    async function testAIConnection() {
+      var sel = document.getElementById('ai-provider-select');
+      var keyInp = document.getElementById('ai-key-input');
+      var modelInp = document.getElementById('ai-model-input');
+      if (sel) localStorage.setItem(AI_PROVIDER_STORAGE, sel.value);
+      if (keyInp && keyInp.value.trim()) localStorage.setItem(AI_KEY_STORAGE, keyInp.value.trim());
+      if (modelInp) {
+        if (modelInp.value.trim()) localStorage.setItem(AI_MODEL_STORAGE, modelInp.value.trim());
+        else localStorage.removeItem(AI_MODEL_STORAGE);
+      }
+      localStorage.removeItem('daideia_gemini_model');
+      var el = document.getElementById('ia-status');
+      if (el) el.textContent = 'Testando...';
+      try {
+        var r = await callAI('Responda apenas com a palavra OK');
+        var msg = '✓ OK — ' + (AI_PROVIDERS[getAIProvider()]||{}).label + ' / ' + getAIModel() + ' — ' + (r||'').substring(0,40);
+        if (el) { el.textContent = msg; el.style.color = 'var(--accent-green)'; }
+        alert('Conexão OK!\\nProvedor: ' + (AI_PROVIDERS[getAIProvider()]||{}).label + '\\nModelo: ' + getAIModel() + '\\nResposta: ' + (r||'').substring(0,80));
+      } catch (e) {
+        if (el) { el.textContent = '✗ ' + e.message; el.style.color = 'var(--accent-red)'; }
+        alert('Erro: ' + e.message);
+      }
+    }
+
+    // legacy names used by old UI buttons (if any)
+    function saveGeminiKey() { saveAIConfig(); }
+    function clearGeminiKey() { clearAIConfig(); }
+    function testGeminiKey() { return testAIConnection(); }
+
+    async function callAI(userPrompt) {
+      var provider = getAIProvider();
+      var key = getAIKey();
+      if (!key) throw new Error('Sem API key');
+      var model = getAIModel();
+      var fullPrompt = SYSTEM_PROMPT + '\\n\\n---\\n\\n' + userPrompt;
+
+      if (provider === 'gemini') {
+        return await callGeminiProvider(fullPrompt, key, model);
+      }
+      if (provider === 'claude') {
+        return await callClaudeProvider(fullPrompt, key, model);
+      }
+      // OpenAI-compatible: openai, grok, deepseek
+      return await callOpenAICompatible(provider, fullPrompt, key, model);
+    }
+
+    async function callOpenAICompatible(provider, fullPrompt, key, model) {
+      var base = {
+        openai: 'https://api.openai.com/v1/chat/completions',
+        grok: 'https://api.x.ai/v1/chat/completions',
+        deepseek: 'https://api.deepseek.com/chat/completions'
+      }[provider];
+      if (!base) throw new Error('Provedor desconhecido: ' + provider);
+      var res = await fetch(base, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer ' + key
+        },
+        body: JSON.stringify({
+          model: model,
+          messages: [
+            { role: 'system', content: SYSTEM_PROMPT },
+            { role: 'user', content: fullPrompt.replace(SYSTEM_PROMPT + '\\n\\n---\\n\\n', '').replace(SYSTEM_PROMPT + '\n\n---\n\n', '') }
+          ],
+          temperature: 0.7,
+          max_tokens: 4096
+        })
+      });
+      if (!res.ok) {
+        var errText = await res.text();
+        throw new Error((provider||'') + ' HTTP ' + res.status + ': ' + errText.substring(0, 220));
+      }
+      var data = await res.json();
+      try {
+        return (data.choices[0].message.content || '').trim();
+      } catch (e) {
+        throw new Error('Resposta inválida de ' + provider);
+      }
+    }
+
+    async function callClaudeProvider(fullPrompt, key, model) {
+      var userText = fullPrompt;
+      // Prefer separate system
+      var res = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-key': key,
+          'anthropic-version': '2023-06-01',
+          'anthropic-dangerous-direct-browser-access': 'true'
+        },
+        body: JSON.stringify({
+          model: model,
+          max_tokens: 4096,
+          system: SYSTEM_PROMPT,
+          messages: [{ role: 'user', content: userText.replace(SYSTEM_PROMPT + '\\n\\n---\\n\\n', '').replace(SYSTEM_PROMPT + '\n\n---\n\n', '') }]
+        })
+      });
+      if (!res.ok) {
+        var errText = await res.text();
+        throw new Error('Claude HTTP ' + res.status + ': ' + errText.substring(0, 220));
+      }
+      var data = await res.json();
+      try {
+        return (data.content[0].text || '').trim();
+      } catch (e) {
+        throw new Error('Resposta inválida do Claude');
+      }
+    }
+
+    async function callGeminiProvider(fullPrompt, key, model) {
+      var modelsTry = [model].concat(GEMINI_MODELS).filter(function(m, i, a){ return m && a.indexOf(m) === i; });
+      var lastErr = null;
+      for (var i = 0; i < modelsTry.length; i++) {
+        var m = modelsTry[i];
+        var url = 'https://generativelanguage.googleapis.com/v1beta/models/' + m + ':generateContent?key=' + encodeURIComponent(key);
+        try {
+          var res = await fetch(url, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              contents: [{ role: 'user', parts: [{ text: fullPrompt }] }],
+              generationConfig: { temperature: 0.7, maxOutputTokens: 4096 }
+            })
+          });
+          if (!res.ok) {
+            lastErr = new Error('Gemini HTTP ' + res.status + ' (' + m + '): ' + (await res.text()).substring(0, 180));
+            if (res.status === 404) continue;
+            throw lastErr;
+          }
+          var data = await res.json();
+          localStorage.setItem(AI_MODEL_STORAGE, m);
+          return (data.candidates[0].content.parts[0].text || '').trim();
+        } catch (e) {
+          lastErr = e;
+          if (String(e.message||'').indexOf('404') >= 0) continue;
+          if (i === modelsTry.length - 1) throw e;
+        }
+      }
+      throw lastErr || new Error('Nenhum modelo Gemini disponível');
+    }
+
+    // Backwards-compatible: all old callGemini calls go through callAI
+    async function callGemini(userPrompt, keyOverride) {
+      if (keyOverride) {
+        // temporary key for test — set and call
+        var prev = getAIKey();
+        localStorage.setItem(AI_KEY_STORAGE, keyOverride);
+        try { return await callAI(userPrompt); }
+        finally { if (prev) localStorage.setItem(AI_KEY_STORAGE, prev); }
+      }
+      return await callAI(userPrompt);
+    }
+
+
+    var SYSTEM_PROMPT = `Você é um estrategista guia de Produto Mínimo (versão 2.1).
+
+MISSÃO: conduzir o usuário decisão por decisão até um Produto Mínimo específico e vendável.
+NÃO é um gerador genérico de textos. É um construtor guiado.
+
+## CATEGORIAS OBRIGATÓRIAS (use sempre)
+- FATO: informação fornecida pelo usuário ou já registrada como decisão no produto.
+- HIPÓTESE: inferência ou sugestão da IA ainda não validada. Nunca apresente como fato.
+- DECISÃO: informação explicitamente aprovada/escolhida pelo usuário.
+
+Uma hipótese NUNCA vira fato.
+Uma recomendação NUNCA vira decisão sozinha.
+Só o usuário transforma sugestão em decisão ao aprovar.
+
+Se sugerir algo não informado (renda, idade, profissão, tamanho de mercado, etc.), marque:
+"Hipótese da IA — confirmar."
+
+## PROIBIÇÕES ABSOLUTAS
+- Nunca invente profissão, idade, faixa de renda, localização, comportamento demográfico ou quantidade de pessoas que o usuário não informou.
+- Nunca diga que existe demanda comprovada sem evidência fornecida ou pesquisa externa.
+- Nunca diga que um método/produto foi validado sem validação real registrada.
+- Nunca invente números de mercado, volume de buscas, número de concorrentes.
+- Nunca invente depoimentos, resultados de clientes ou provas sociais.
+- Nunca invente preço, garantia, prazo de acesso, bônus aprovados ou qualquer condição comercial.
+- Nunca transforme inferência em fato.
+- Se faltar informação necessária: use "[INFORMAÇÃO NÃO DEFINIDA]" ou "HIPÓTESE — confirmar."
+- Não há pesquisa externa nesta versão. Se não houver evidência: diga "Não há pesquisa externa disponível nesta etapa."
+
+## SCORES
+Scores são "Avaliação estratégica da IA", NÃO validação de mercado.
+Nunca use: "demanda comprovada", "mercado validado", "produto validado", "alta procura comprovada".
+
+## ESCOPO
+UM público. UMA dor. UMA transformação. UM produto. UMA promessa. UM caminho.
+Produto de entrada: R$ 27 a R$ 97 quando o usuário definir preço. Página simples. Sem lançamento complexo.
+Não contradiga nem altere decisões aprovadas no contexto.
+Português do Brasil, tom direto.
+Quando pedir opções: 3 a 5, com uma recomendada como HIPÓTESE de escolha.
+`;
+
+    function extractJSON(text) {
+      if (!text) return null;
+      // try fenced json
+      var m = text.match(/```json\s*([\s\S]*?)```/i);
+      if (m) {
+        try { return JSON.parse(m[1]); } catch(e) {}
+      }
+      // try raw object
+      var start = text.indexOf('{');
+      var end = text.lastIndexOf('}');
+      if (start >= 0 && end > start) {
+        try { return JSON.parse(text.substring(start, end + 1)); } catch(e) {}
+      }
+      var startA = text.indexOf('[');
+      var endA = text.lastIndexOf(']');
+      if (startA >= 0 && endA > startA) {
+        try { return JSON.parse(text.substring(startA, endA + 1)); } catch(e) {}
+      }
+      return null;
+    }
+
+
+    function init() {
+      // Always start on home (Meus Produtos)
+      if (products.length && currentId && products.find(function(p){ return p.id === currentId; })) {
+        // Keep products, show home
+      }
+      renderHome();
+    }
+
+    init();
+  </script>
+
+  <!-- IA SETTINGS MODAL -->
+  <div class="modal-overlay" id="ia-modal">
+    <div class="modal">
+      <button class="modal-close" onclick="closeModal('ia-modal')">×</button>
+      <h2>Configurar IA</h2>
+      <p class="subtitle">Escolha o provedor e cole a API key. Fica só neste navegador.</p>
+      <div class="ai-result">
+        <div class="profile-item full">
+          <label>Provedor</label>
+          <select id="ai-provider-select" style="min-height:44px;width:100%;background:var(--bg-input);border:1px solid var(--border);color:var(--text);border-radius:8px;padding:10px 12px;font-family:inherit;font-size:14px">
+            <option value="gemini">Google Gemini</option>
+            <option value="grok">xAI Grok</option>
+            <option value="openai">OpenAI (ChatGPT)</option>
+            <option value="claude">Anthropic Claude</option>
+            <option value="deepseek">DeepSeek</option>
+          </select>
+        </div>
+        <div class="profile-item full" style="margin-top:12px">
+          <label>API Key</label>
+          <input type="password" id="ai-key-input" placeholder="Cole sua chave aqui" style="min-height:44px" />
+        </div>
+        <div class="profile-item full" style="margin-top:12px">
+          <label>Modelo (opcional)</label>
+          <input type="text" id="ai-model-input" placeholder="Deixe vazio para o padrão do provedor" style="min-height:44px" />
+        </div>
+        <p id="ai-provider-help" style="font-size:12px;color:var(--text-muted);margin-top:10px"></p>
+        <p style="font-size:12px;color:var(--text-muted);margin-top:8px">
+          Sem chave, o app usa respostas simuladas. A chave não é enviada para nenhum servidor nosso.
+        </p>
+        <p id="ia-status" style="font-size:13px;margin-top:12px;color:var(--text-secondary)"></p>
+      </div>
+      <div class="modal-actions">
+        <button class="btn btn-primary" onclick="saveAIConfig()">Salvar</button>
+        <button class="btn btn-ghost" onclick="testAIConnection()">Testar conexão</button>
+        <button class="btn btn-secondary" onclick="clearAIConfig()">Remover</button>
+      </div>
+    </div>
+  </div>
+
+</body>
+</html>

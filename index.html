@@ -3187,11 +3187,180 @@ Entregue APENAS a página otimizada completa.`;
       var help = document.getElementById('ai-provider-help');
       var keyInp = document.getElementById('ai-key-input');
       var modelInp = document.getElementById('ai-model-input');
+      var modelSel = document.getElementById('ai-model-select');
       if (!sel) return;
       var p = AI_PROVIDERS[sel.value] || AI_PROVIDERS.gemini;
       if (help) help.innerHTML = p.help;
       if (keyInp) keyInp.placeholder = p.keyPlaceholder;
       if (modelInp && !modelInp.value) modelInp.placeholder = 'Padrão: ' + p.defaultModel;
+      // limpa lista descoberta ao trocar provedor
+      if (modelSel) {
+        modelSel.innerHTML = '<option value="">— use o padrão ou digite abaixo —</option>';
+      }
+    }
+
+    /** Lista modelos que a chave consegue ver em cada provedor */
+    async function listModelsForProvider(provider, key) {
+      if (!key) throw new Error('Cole a API key antes de descobrir modelos.');
+      provider = provider || getAIProvider();
+      var names = [];
+
+      if (provider === 'gemini') {
+        var res = await fetch('https://generativelanguage.googleapis.com/v1beta/models?key=' + encodeURIComponent(key));
+        if (!res.ok) throw new Error('Gemini list models HTTP ' + res.status + ': ' + (await res.text()).substring(0, 180));
+        var data = await res.json();
+        (data.models || []).forEach(function(m) {
+          var id = (m.name || '').replace(/^models\//, '');
+          var methods = m.supportedGenerationMethods || [];
+          if (id && methods.indexOf('generateContent') >= 0) names.push(id);
+        });
+        // prefer flash / lite first
+        names.sort(function(a, b) {
+          var score = function(x) {
+            var s = 0;
+            if (/flash/i.test(x)) s += 10;
+            if (/lite/i.test(x)) s += 5;
+            if (/pro/i.test(x)) s += 2;
+            if (/embed/i.test(x)) s -= 20;
+            return s;
+          };
+          return score(b) - score(a);
+        });
+        return names;
+      }
+
+      if (provider === 'claude') {
+        var resC = await fetch('https://api.anthropic.com/v1/models', {
+          method: 'GET',
+          headers: {
+            'x-api-key': key,
+            'anthropic-version': '2023-06-01',
+            'anthropic-dangerous-direct-browser-access': 'true'
+          }
+        });
+        if (!resC.ok) throw new Error('Claude list models HTTP ' + resC.status + ': ' + (await resC.text()).substring(0, 180));
+        var dataC = await resC.json();
+        (dataC.data || []).forEach(function(m) {
+          if (m.id) names.push(m.id);
+        });
+        return names;
+      }
+
+      // OpenAI-compatible: openai, grok, deepseek
+      var baseUrl = {
+        openai: 'https://api.openai.com/v1/models',
+        grok: 'https://api.x.ai/v1/models',
+        deepseek: 'https://api.deepseek.com/models'
+      }[provider];
+      if (!baseUrl) throw new Error('Provedor sem listagem de modelos: ' + provider);
+
+      var resO = await fetch(baseUrl, {
+        method: 'GET',
+        headers: { 'Authorization': 'Bearer ' + key }
+      });
+      if (!resO.ok) {
+        var errT = await resO.text();
+        throw new Error(provider + ' list models HTTP ' + resO.status + ': ' + errT.substring(0, 220));
+      }
+      var dataO = await resO.json();
+      (dataO.data || []).forEach(function(m) {
+        if (m.id) names.push(m.id);
+      });
+
+      // filtrar / ordenar por provedor
+      if (provider === 'grok') {
+        names = names.filter(function(id) {
+          return /^grok/i.test(id) && !/embed|image|vision|tts|whisper/i.test(id);
+        });
+        names.sort(function(a, b) {
+          // preferir grok-4, depois 3, etc.
+          var rank = function(x) {
+            if (/grok-4\.6/i.test(x)) return 100;
+            if (/grok-4\.5/i.test(x)) return 90;
+            if (/grok-4/i.test(x)) return 80;
+            if (/grok-3/i.test(x)) return 50;
+            if (/grok-2/i.test(x)) return 30;
+            return 10;
+          };
+          return rank(b) - rank(a) || a.localeCompare(b);
+        });
+      } else if (provider === 'openai') {
+        names = names.filter(function(id) {
+          return /^(gpt-|o[0-9]|chatgpt)/i.test(id) && !/instruct|realtime|audio|tts|whisper|embed|dall/i.test(id);
+        });
+        names.sort();
+      } else if (provider === 'deepseek') {
+        names = names.filter(function(id) { return /deepseek/i.test(id); });
+        names.sort();
+      }
+
+      return names;
+    }
+
+    async function discoverAIModels() {
+      var sel = document.getElementById('ai-provider-select');
+      var keyInp = document.getElementById('ai-key-input');
+      var modelSel = document.getElementById('ai-model-select');
+      var modelInp = document.getElementById('ai-model-input');
+      var statusEl = document.getElementById('ia-status');
+      var provider = sel ? sel.value : getAIProvider();
+      var key = (keyInp && keyInp.value.trim()) || getAIKey();
+      if (!key) {
+        alert('Cole a API key antes de descobrir modelos.');
+        return;
+      }
+      if (statusEl) {
+        statusEl.textContent = 'Descobrindo modelos...';
+        statusEl.style.color = 'var(--text-secondary)';
+      }
+      try {
+        var models = await listModelsForProvider(provider, key);
+        if (!models.length) {
+          if (statusEl) {
+            statusEl.textContent = 'Nenhum modelo listado para esta chave.';
+            statusEl.style.color = 'var(--accent-yellow)';
+          }
+          alert('A chave respondeu, mas nenhum modelo útil foi listado. Você ainda pode digitar o nome do modelo manualmente.');
+          return;
+        }
+        // preencher select
+        if (modelSel) {
+          var current = (modelInp && modelInp.value.trim()) || getAIModel() || '';
+          modelSel.innerHTML = '<option value="">— escolha um modelo —</option>';
+          models.forEach(function(id) {
+            var opt = document.createElement('option');
+            opt.value = id;
+            opt.textContent = id;
+            if (id === current) opt.selected = true;
+            modelSel.appendChild(opt);
+          });
+          // se nada selecionado, pega o primeiro
+          if (!modelSel.value && models[0]) {
+            modelSel.value = models[0];
+            if (modelInp) modelInp.value = models[0];
+          }
+          modelSel.onchange = function() {
+            if (modelSel.value && modelInp) modelInp.value = modelSel.value;
+          };
+        } else if (modelInp && models[0] && !modelInp.value.trim()) {
+          modelInp.value = models[0];
+        }
+        // salva temporariamente o primeiro se não houver modelo salvo
+        if (!localStorage.getItem(AI_MODEL_STORAGE) && models[0]) {
+          localStorage.setItem(AI_MODEL_STORAGE, models[0]);
+        }
+        if (statusEl) {
+          statusEl.textContent = '✓ ' + models.length + ' modelo(s) encontrados. Escolha na lista e salve.';
+          statusEl.style.color = 'var(--accent-green)';
+        }
+        alert('Modelos disponíveis com esta chave (' + (AI_PROVIDERS[provider]||{}).label + '):\n\n' + models.slice(0, 20).join('\n') + (models.length > 20 ? '\n… (+' + (models.length - 20) + ')' : '') + '\n\nEscolha na lista e clique em Salvar.');
+      } catch (e) {
+        if (statusEl) {
+          statusEl.textContent = '✗ ' + e.message;
+          statusEl.style.color = 'var(--accent-red)';
+        }
+        alert('Não foi possível listar modelos.\n\n' + e.message + '\n\nConfira a chave e o provedor. Você ainda pode digitar o modelo manualmente.');
+      }
     }
 
     function openIASettings() {
@@ -3214,9 +3383,13 @@ Entregue APENAS a página otimizada completa.`;
       var sel = document.getElementById('ai-provider-select');
       var keyInp = document.getElementById('ai-key-input');
       var modelInp = document.getElementById('ai-model-input');
+      var modelSel = document.getElementById('ai-model-select');
       var provider = sel ? sel.value : 'gemini';
       var key = (keyInp && keyInp.value || '').trim();
-      var model = (modelInp && modelInp.value || '').trim();
+      // prioridade: select descoberto > campo manual
+      var model = '';
+      if (modelSel && modelSel.value) model = modelSel.value.trim();
+      else if (modelInp) model = (modelInp.value || '').trim();
       if (!key) { alert('Cole a API key.'); return; }
       localStorage.setItem(AI_PROVIDER_STORAGE, provider);
       localStorage.setItem(AI_KEY_STORAGE, key);
@@ -3226,7 +3399,7 @@ Entregue APENAS a página otimizada completa.`;
       // legacy gemini key sync
       if (provider === 'gemini') localStorage.setItem(GEMINI_KEY_STORAGE, key);
       updateIAStatus();
-      alert('Configuração salva (' + (AI_PROVIDERS[provider]||{}).label + '). Clique em Testar conexão.');
+      alert('Configuração salva (' + (AI_PROVIDERS[provider]||{}).label + (model ? ' / ' + model : '') + ').\n\nUse Descobrir modelos se ainda não listou os modelos da chave, depois Testar conexão.');
       closeModal('ia-modal');
     }
 
@@ -3263,9 +3436,13 @@ Entregue APENAS a página otimizada completa.`;
       var sel = document.getElementById('ai-provider-select');
       var keyInp = document.getElementById('ai-key-input');
       var modelInp = document.getElementById('ai-model-input');
+      var modelSel = document.getElementById('ai-model-select');
       if (sel) localStorage.setItem(AI_PROVIDER_STORAGE, sel.value);
       if (keyInp && keyInp.value.trim()) localStorage.setItem(AI_KEY_STORAGE, keyInp.value.trim());
-      if (modelInp) {
+      if (modelSel && modelSel.value) {
+        localStorage.setItem(AI_MODEL_STORAGE, modelSel.value);
+        if (modelInp) modelInp.value = modelSel.value;
+      } else if (modelInp) {
         if (modelInp.value.trim()) localStorage.setItem(AI_MODEL_STORAGE, modelInp.value.trim());
         else localStorage.removeItem(AI_MODEL_STORAGE);
       }
@@ -3273,13 +3450,54 @@ Entregue APENAS a página otimizada completa.`;
       var el = document.getElementById('ia-status');
       if (el) el.textContent = 'Testando...';
       try {
+        // 1) tenta listar modelos (valida a chave e descobre nomes reais)
+        try {
+          var models = await listModelsForProvider(getAIProvider(), getAIKey());
+          if (models.length) {
+            if (modelSel) {
+              var cur = getAIModel();
+              modelSel.innerHTML = '<option value="">— escolha um modelo —</option>';
+              models.forEach(function(id) {
+                var opt = document.createElement('option');
+                opt.value = id;
+                opt.textContent = id;
+                if (id === cur) opt.selected = true;
+                modelSel.appendChild(opt);
+              });
+              if (!modelSel.value && models[0]) {
+                modelSel.value = models[0];
+                localStorage.setItem(AI_MODEL_STORAGE, models[0]);
+                if (modelInp) modelInp.value = models[0];
+              }
+              modelSel.onchange = function() {
+                if (modelSel.value && modelInp) modelInp.value = modelSel.value;
+              };
+            }
+            // se o modelo atual não está na lista, troca para o primeiro
+            if (models.indexOf(getAIModel()) < 0) {
+              localStorage.setItem(AI_MODEL_STORAGE, models[0]);
+              if (modelInp) modelInp.value = models[0];
+              if (modelSel) modelSel.value = models[0];
+            }
+          }
+        } catch (listErr) {
+          console.warn('List models falhou (segue teste de chat):', listErr);
+        }
+
+        // 2) teste de chat
         var r = await callAI('Responda apenas com a palavra OK');
         var msg = '✓ OK — ' + (AI_PROVIDERS[getAIProvider()]||{}).label + ' / ' + getAIModel() + ' — ' + (r||'').substring(0,40);
         if (el) { el.textContent = msg; el.style.color = 'var(--accent-green)'; }
-        alert('Conexão OK!\\nProvedor: ' + (AI_PROVIDERS[getAIProvider()]||{}).label + '\\nModelo: ' + getAIModel() + '\\nResposta: ' + (r||'').substring(0,80));
+        alert('Conexão OK!\nProvedor: ' + (AI_PROVIDERS[getAIProvider()]||{}).label + '\nModelo: ' + getAIModel() + '\nResposta: ' + (r||'').substring(0,80));
       } catch (e) {
         if (el) { el.textContent = '✗ ' + e.message; el.style.color = 'var(--accent-red)'; }
-        alert('Erro: ' + e.message);
+        var extra = '';
+        if (/Incorrect API key|invalid.*key|401|Unauthorized/i.test(String(e.message||''))) {
+          extra = '\n\nA chave foi rejeitada. Gere uma nova em console.x.ai (Grok) ou no painel do provedor. Não use o Grok grátis do app X.';
+        } else if (/model|not found|does not exist|404/i.test(String(e.message||''))) {
+          extra = '\n\nO modelo pode estar errado. Clique em "Descobrir modelos" e escolha um da lista.';
+        }
+        alert('Erro: ' + e.message + extra);
       }
     }
 
@@ -3312,31 +3530,58 @@ Entregue APENAS a página otimizada completa.`;
         deepseek: 'https://api.deepseek.com/chat/completions'
       }[provider];
       if (!base) throw new Error('Provedor desconhecido: ' + provider);
-      var res = await fetch(base, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer ' + key
-        },
-        body: JSON.stringify({
-          model: model,
-          messages: [
-            { role: 'system', content: SYSTEM_PROMPT },
-            { role: 'user', content: fullPrompt.replace(SYSTEM_PROMPT + '\\n\\n---\\n\\n', '').replace(SYSTEM_PROMPT + '\n\n---\n\n', '') }
-          ],
-          temperature: 0.7,
-          max_tokens: 4096
-        })
-      });
-      if (!res.ok) {
-        var errText = await res.text();
-        throw new Error((provider||'') + ' HTTP ' + res.status + ': ' + errText.substring(0, 220));
+
+      async function doChat(modelName) {
+        var res = await fetch(base, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer ' + key
+          },
+          body: JSON.stringify({
+            model: modelName,
+            messages: [
+              { role: 'system', content: SYSTEM_PROMPT },
+              { role: 'user', content: fullPrompt.replace(SYSTEM_PROMPT + '\\n\\n---\\n\\n', '').replace(SYSTEM_PROMPT + '\n\n---\n\n', '') }
+            ],
+            temperature: 0.7,
+            max_tokens: 4096
+          })
+        });
+        var errText = '';
+        if (!res.ok) {
+          errText = await res.text();
+          var err = new Error((provider||'') + ' HTTP ' + res.status + ': ' + errText.substring(0, 220));
+          err.status = res.status;
+          err.body = errText;
+          throw err;
+        }
+        var data = await res.json();
+        try {
+          return (data.choices[0].message.content || '').trim();
+        } catch (e) {
+          throw new Error('Resposta inválida de ' + provider);
+        }
       }
-      var data = await res.json();
+
       try {
-        return (data.choices[0].message.content || '').trim();
+        var out = await doChat(model);
+        return out;
       } catch (e) {
-        throw new Error('Resposta inválida de ' + provider);
+        // se modelo inválido, tenta descobrir e usar o primeiro disponível
+        var body = String(e.body || e.message || '');
+        if (e.status === 400 || e.status === 404 || /model|not found|does not exist|invalid/i.test(body)) {
+          try {
+            var models = await listModelsForProvider(provider, key);
+            if (models.length && models[0] !== model) {
+              localStorage.setItem(AI_MODEL_STORAGE, models[0]);
+              return await doChat(models[0]);
+            }
+          } catch (listErr) {
+            // ignora e relança o erro original
+          }
+        }
+        throw e;
       }
     }
 
@@ -3510,17 +3755,24 @@ Quando pedir opções: 3 a 5, com uma recomendada como HIPÓTESE de escolha.
           <input type="password" id="ai-key-input" placeholder="Cole sua chave aqui" style="min-height:44px" />
         </div>
         <div class="profile-item full" style="margin-top:12px">
-          <label>Modelo (opcional)</label>
+          <label>Modelos descobertos (pela chave)</label>
+          <select id="ai-model-select" style="min-height:44px;width:100%;background:var(--bg-input);border:1px solid var(--border);color:var(--text);border-radius:8px;padding:10px 12px;font-family:inherit;font-size:14px">
+            <option value="">— use Descobrir modelos ou digite abaixo —</option>
+          </select>
+        </div>
+        <div class="profile-item full" style="margin-top:12px">
+          <label>Modelo (manual / opcional)</label>
           <input type="text" id="ai-model-input" placeholder="Deixe vazio para o padrão do provedor" style="min-height:44px" />
         </div>
         <p id="ai-provider-help" style="font-size:12px;color:var(--text-muted);margin-top:10px"></p>
         <p style="font-size:12px;color:var(--text-muted);margin-top:8px">
-          Sem chave, o app usa respostas simuladas. A chave não é enviada para nenhum servidor nosso.
+          Clique em <strong>Descobrir modelos</strong> para a API listar o que sua chave pode usar. Sem chave, o app usa respostas simuladas.
         </p>
         <p id="ia-status" style="font-size:13px;margin-top:12px;color:var(--text-secondary)"></p>
       </div>
-      <div class="modal-actions">
+      <div class="modal-actions" style="flex-wrap:wrap;gap:8px">
         <button class="btn btn-primary" onclick="saveAIConfig()">Salvar</button>
+        <button class="btn btn-ghost" onclick="discoverAIModels()">Descobrir modelos</button>
         <button class="btn btn-ghost" onclick="testAIConnection()">Testar conexão</button>
         <button class="btn btn-secondary" onclick="clearAIConfig()">Remover</button>
       </div>

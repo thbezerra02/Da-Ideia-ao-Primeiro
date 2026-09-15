@@ -3138,9 +3138,15 @@ Entregue APENAS a página otimizada completa.`;
         defaultModel: 'gemini-3.5-flash',
         keyPlaceholder: 'AIza...'
       },
+      groq: {
+        label: 'Groq (recomendado)',
+        help: 'Chave em console.groq.com/keys — começa com gsk_... Modelos: llama-3.1-8b-instant etc. (é Groq, não xAI Grok)',
+        defaultModel: 'llama-3.1-8b-instant',
+        keyPlaceholder: 'gsk_...'
+      },
       grok: {
         label: 'xAI Grok',
-        help: 'Chave da API em console.x.ai (não é o Grok grátis do app X). Modelos: grok-4.6, grok-4.5',
+        help: 'Chave da API em console.x.ai (não é o Grok grátis do app X e NÃO é Groq). Modelos: grok-4.6, grok-4.5',
         defaultModel: 'grok-4.6',
         keyPlaceholder: 'xai-...'
       },
@@ -3246,10 +3252,11 @@ Entregue APENAS a página otimizada completa.`;
         return names;
       }
 
-      // OpenAI-compatible: openai, grok, deepseek
+      // OpenAI-compatible: openai, grok (xAI), groq, deepseek
       var baseUrl = {
         openai: 'https://api.openai.com/v1/models',
         grok: 'https://api.x.ai/v1/models',
+        groq: 'https://api.groq.com/openai/v1/models',
         deepseek: 'https://api.deepseek.com/models'
       }[provider];
       if (!baseUrl) throw new Error('Provedor sem listagem de modelos: ' + provider);
@@ -3268,6 +3275,28 @@ Entregue APENAS a página otimizada completa.`;
       });
 
       // filtrar / ordenar por provedor
+      if (provider === 'groq') {
+        names = names.filter(function(id) {
+          return !/whisper|guard|tts|prompt-guard|embed/i.test(id);
+        });
+        var preferidos = [
+          'llama-3.1-8b-instant',
+          'llama-3.3-70b-versatile',
+          'llama3-8b-8192',
+          'llama3-70b-8192',
+          'gemma2-9b-it',
+          'openai/gpt-oss-20b',
+          'openai/gpt-oss-120b'
+        ];
+        names.sort(function(a, b) {
+          var ia = preferidos.indexOf(a);
+          var ib = preferidos.indexOf(b);
+          if (ia < 0) ia = 999;
+          if (ib < 0) ib = 999;
+          return ia - ib;
+        });
+        return names;
+      }
       if (provider === 'grok') {
         names = names.filter(function(id) {
           return /^grok/i.test(id) && !/embed|image|vision|tts|whisper/i.test(id);
@@ -3527,6 +3556,7 @@ Entregue APENAS a página otimizada completa.`;
       var base = {
         openai: 'https://api.openai.com/v1/chat/completions',
         grok: 'https://api.x.ai/v1/chat/completions',
+        groq: 'https://api.groq.com/openai/v1/chat/completions',
         deepseek: 'https://api.deepseek.com/chat/completions'
       }[provider];
       if (!base) throw new Error('Provedor desconhecido: ' + provider);
@@ -3743,8 +3773,9 @@ Quando pedir opções: 3 a 5, com uma recomendada como HIPÓTESE de escolha.
         <div class="profile-item full">
           <label>Provedor</label>
           <select id="ai-provider-select" style="min-height:44px;width:100%;background:var(--bg-input);border:1px solid var(--border);color:var(--text);border-radius:8px;padding:10px 12px;font-family:inherit;font-size:14px">
+            <option value="groq">Groq (chave gsk_...)</option>
             <option value="gemini">Google Gemini</option>
-            <option value="grok">xAI Grok</option>
+            <option value="grok">xAI Grok (chave xai-...)</option>
             <option value="openai">OpenAI (ChatGPT)</option>
             <option value="claude">Anthropic Claude</option>
             <option value="deepseek">DeepSeek</option>
